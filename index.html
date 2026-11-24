@@ -1,0 +1,3669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>NEON VR PINBALL — Overdrive Cyber-Arcade</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =========================================================================
+       CORE CYBER-ARCADE UI & RESPONSIVE OVERLAY STYLING
+       ========================================================================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050816;
+      font-family: 'Rajdhani', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #eaf8ff;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Top-Right HUD Controls Bar */
+    #top-bar {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      z-index: 25;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .hud-btn {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      background: rgba(6, 14, 38, 0.78);
+      border: 1px solid rgba(0, 243, 255, 0.52);
+      color: #ccf9ff;
+      padding: 8px 13px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 18px rgba(0, 220, 255, 0.22);
+      transition: transform 0.14s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .hud-btn:hover {
+      background: rgba(0, 243, 255, 0.22);
+      box-shadow: 0 0 22px rgba(0, 243, 255, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .hud-btn:active {
+      transform: scale(0.95);
+    }
+
+    .hud-btn.vr-pill {
+      border-color: rgba(255, 0, 204, 0.68);
+      color: #ffc8f5;
+      box-shadow: 0 4px 18px rgba(255, 0, 204, 0.28);
+    }
+
+    .hud-btn.gold-pill {
+      border-color: rgba(255, 180, 0, 0.78);
+      color: #ffe799;
+      background: rgba(48, 26, 6, 0.78);
+      box-shadow: 0 4px 18px rgba(255, 150, 0, 0.32);
+    }
+
+    /* Compact Desktop Mini-Scoreboard (Top-Left) */
+    #mini-hud {
+      position: fixed;
+      top: 14px;
+      left: 16px;
+      z-index: 22;
+      display: none;
+      gap: 12px;
+      align-items: center;
+      background: rgba(6, 14, 38, 0.76);
+      border: 1px solid rgba(0, 243, 255, 0.45);
+      border-radius: 14px;
+      padding: 8px 16px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0, 220, 255, 0.2);
+    }
+
+    .mini-stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mini-label {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: #7eeeff;
+    }
+
+    .mini-val {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
+    }
+
+    /* Center Callout Banner */
+    #callout {
+      position: fixed;
+      top: 16%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      z-index: 24;
+      pointer-events: none;
+      opacity: 0;
+      text-align: center;
+      padding: 12px 30px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(8, 16, 46, 0.86), rgba(32, 8, 52, 0.84));
+      border: 1.5px solid rgba(255, 0, 204, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 34px rgba(255, 0, 204, 0.35);
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #callout.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    #callout-title {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: clamp(1.15rem, 3vw, 1.85rem);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: #ffffff;
+      text-shadow: 0 0 18px #ff00cc;
+    }
+
+    #callout-sub {
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: #b4f4ff;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Plunger Launch Hint Pill */
+    #launch-hint {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 22;
+      pointer-events: none;
+      opacity: 0;
+      padding: 8px 20px;
+      border-radius: 999px;
+      background: rgba(6, 16, 42, 0.82);
+      border: 1px solid rgba(0, 243, 255, 0.58);
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #ccf9ff;
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.28);
+      transition: opacity 0.25s ease;
+    }
+
+    #launch-hint.show {
+      opacity: 1;
+    }
+
+    /* Mobile / Touch Controls Bar */
+    #touch-bar {
+      position: fixed;
+      bottom: 16px;
+      left: 0;
+      right: 0;
+      z-index: 23;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 18px;
+      pointer-events: none;
+    }
+
+    .touch-cluster {
+      display: flex;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .touch-pad {
+      pointer-events: auto;
+      min-width: 82px;
+      height: 52px;
+      padding: 0 15px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(0, 243, 255, 0.68);
+      background: rgba(6, 18, 46, 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #d0fcff;
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(0, 243, 255, 0.26);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.08s ease, background 0.12s ease;
+    }
+
+    .touch-pad.magenta {
+      border-color: rgba(255, 0, 204, 0.72);
+      color: #ffd0f8;
+      box-shadow: 0 0 18px rgba(255, 0, 204, 0.26);
+    }
+
+    .touch-pad.gold {
+      border-color: rgba(255, 175, 0, 0.75);
+      color: #ffe8a3;
+      box-shadow: 0 0 18px rgba(255, 160, 0, 0.28);
+    }
+
+    .touch-pad:active, .touch-pad.active {
+      transform: scale(0.94);
+      background: rgba(0, 243, 255, 0.34);
+    }
+
+    .touch-pad.magenta:active, .touch-pad.magenta.active {
+      background: rgba(255, 0, 204, 0.34);
+    }
+
+    /* Glassmorphic Start & Game Over Overlays */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: radial-gradient(circle at center, rgba(10, 16, 48, 0.62) 0%, rgba(3, 5, 18, 0.9) 100%);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: opacity 0.3s ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .panel {
+      width: 100%;
+      max-width: 630px;
+      background: linear-gradient(155deg, rgba(8, 16, 44, 0.92), rgba(24, 8, 48, 0.94));
+      border: 1.5px solid rgba(0, 243, 255, 0.5);
+      border-radius: 24px;
+      padding: 28px 26px;
+      box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.7),
+        0 0 44px rgba(0, 243, 255, 0.2),
+        inset 0 0 32px rgba(255, 0, 204, 0.14);
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      color: #8bf7ff;
+      background: rgba(0, 243, 255, 0.12);
+      border: 1px solid rgba(0, 243, 255, 0.42);
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    .title-glow {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: clamp(1.6rem, 4.4vw, 2.55rem);
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: linear-gradient(95deg, #00f3ff 0%, #ffffff 36%, #ff00cc 72%, #ffaa00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 18px rgba(0, 243, 255, 0.42));
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 0.96rem;
+      font-weight: 600;
+      color: #95d3f2;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .control-card {
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(0, 243, 255, 0.24);
+      border-radius: 16px;
+      padding: 13px 15px;
+    }
+
+    .control-card.vr {
+      border-color: rgba(255, 0, 204, 0.3);
+    }
+
+    .control-card h3 {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #00f3ff;
+      margin-bottom: 6px;
+    }
+
+    .control-card.vr h3 {
+      color: #ff4be2;
+    }
+
+    .control-card p {
+      font-size: 0.9rem;
+      line-height: 1.42;
+      color: #d2ecf9;
+      font-weight: 500;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .btn-primary, .btn-gold, .btn-vr {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      flex: 1 1 165px;
+      padding: 13px 18px;
+      border-radius: 15px;
+      color: #ffffff;
+      font-size: 0.84rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+
+    .btn-primary {
+      border: 1.5px solid #00f3ff;
+      background: linear-gradient(135deg, rgba(0, 215, 255, 0.34), rgba(0, 105, 255, 0.46));
+      box-shadow: 0 6px 24px rgba(0, 243, 255, 0.32);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 34px rgba(0, 243, 255, 0.58);
+    }
+
+    .btn-gold {
+      border: 1.5px solid #ffaa00;
+      background: linear-gradient(135deg, rgba(255, 165, 0, 0.34), rgba(255, 65, 0, 0.46));
+      box-shadow: 0 6px 24px rgba(255, 140, 0, 0.32);
+    }
+
+    .btn-gold:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 34px rgba(255, 165, 0, 0.6);
+    }
+
+    .btn-vr {
+      border: 1.5px solid #ff00cc;
+      background: linear-gradient(135deg, rgba(255, 0, 204, 0.32), rgba(130, 20, 255, 0.46));
+      box-shadow: 0 6px 24px rgba(255, 0, 204, 0.32);
+    }
+
+    .btn-vr:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 34px rgba(255, 0, 204, 0.62);
+    }
+
+    .btn-vr:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .vr-status {
+      font-size: 0.84rem;
+      color: #8eaec9;
+      min-height: 18px;
+      font-weight: 600;
+    }
+
+    .final-stats {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin: 18px 0 22px;
+    }
+
+    .stat-box {
+      background: rgba(0, 243, 255, 0.08);
+      border: 1px solid rgba(0, 243, 255, 0.34);
+      border-radius: 16px;
+      padding: 12px 22px;
+      min-width: 145px;
+    }
+
+    .stat-label {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 0.64rem;
+      letter-spacing: 0.14em;
+      color: #8cc9e8;
+      text-transform: uppercase;
+    }
+
+    .stat-val {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 1.55rem;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 0 14px rgba(0, 243, 255, 0.65);
+      margin-top: 4px;
+    }
+  </style>
+
+  <!-- ES Module Import Map for Three.js r160 -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <!-- Compact Top-Left Mini Scoreboard -->
+  <div id="mini-hud">
+    <div class="mini-stat">
+      <span class="mini-label">SCORE</span>
+      <span id="mini-score" class="mini-val">0</span>
+    </div>
+    <div class="mini-stat">
+      <span class="mini-label">BALL</span>
+      <span id="mini-ball" class="mini-val">1/3</span>
+    </div>
+    <div class="mini-stat">
+      <span class="mini-label">MULT</span>
+      <span id="mini-mult" class="mini-val">1x</span>
+    </div>
+  </div>
+
+  <!-- Minimal Top-Right Controls -->
+  <div id="top-bar">
+    <button id="btn-cam" class="hud-btn" style="display:none;" title="Switch Camera Angle (C)">CAM</button>
+    <button id="btn-bloom" class="hud-btn" title="Toggle Neon Bloom">BLOOM ON</button>
+    <button id="btn-multiball-demo" class="hud-btn gold-pill" style="display:none;" title="Trigger Multiball x3">MULTIBALL x3</button>
+    <button id="btn-mute" class="hud-btn">SOUND ON</button>
+    <button id="btn-vr-top" class="hud-btn vr-pill" style="display:none;">ENTER VR</button>
+    <button id="btn-menu" class="hud-btn" style="display:none;">MENU</button>
+  </div>
+
+  <!-- Center Callout Banner -->
+  <div id="callout">
+    <div id="callout-title">MULTIBALL! x3</div>
+    <div id="callout-sub">3-BALL NEON CHAOS ACTIVE</div>
+  </div>
+
+  <!-- Plunger Launch Hint -->
+  <div id="launch-hint">HOLD &amp; RELEASE SPACE (OR ↓) TO LAUNCH BALL</div>
+
+  <!-- Mobile / Touch On-Screen Controls -->
+  <div id="touch-bar">
+    <div class="touch-cluster">
+      <button id="touch-left" class="touch-pad">L FLIP</button>
+      <button id="touch-nudge" class="touch-pad">NUDGE</button>
+    </div>
+    <div class="touch-cluster">
+      <button id="touch-plunger" class="touch-pad gold">LAUNCH</button>
+      <button id="touch-right" class="touch-pad magenta">R FLIP</button>
+    </div>
+  </div>
+
+  <!-- Start Menu Overlay -->
+  <div id="start-overlay" class="overlay">
+    <div class="panel">
+      <div class="badge">OVERDRIVE EDITION • 3D WEBXR</div>
+      <div class="title-glow">NEON VR PINBALL</div>
+      <div class="subtitle">Full-Size Cyber-Arcade Cabinet</div>
+
+      <div class="controls-grid">
+        <div class="control-card">
+          <h3>Desktop / Mobile</h3>
+          <p><strong>Left-Click / Z / A / ◀</strong> Left Flipper • <strong>Right-Click / / / D / ▶</strong> Right Flipper • Hold &amp; release <strong>Space / ▼</strong> for Spring Plunger • <strong>X / ▲</strong> Nudge • <strong>C</strong> Camera.</p>
+        </div>
+        <div class="control-card vr">
+          <h3>Meta Quest / WebXR VR</h3>
+          <p>Lean right over the glowing glass! Pull <strong>Left / Right Triggers</strong> for snappy flippers, pull <strong>Right Grip</strong> to retract &amp; release the spring plunger, with crisp controller haptics.</p>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-play" class="btn-primary">PLAY TABLE</button>
+        <button id="btn-demo-start" class="btn-gold">MULTIBALL DEMO</button>
+        <button id="btn-enter-vr" class="btn-vr" disabled>ENTER VR</button>
+      </div>
+      <div id="vr-status" class="vr-status">Checking WebXR headset support...</div>
+    </div>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div id="end-overlay" class="overlay hidden">
+    <div class="panel">
+      <div class="title-glow">GAME OVER</div>
+      <div class="subtitle">Neon Overdrive Complete</div>
+
+      <div class="final-stats">
+        <div class="stat-box">
+          <div class="stat-label">Final Score</div>
+          <div id="final-score" class="stat-val">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">High Score</div>
+          <div id="final-high" class="stat-val">0</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-restart" class="btn-primary">PLAY AGAIN</button>
+        <button id="btn-end-vr" class="btn-vr" style="display:none;">ENTER VR</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    /* =========================================================================
+       1. PROCEDURAL WEB AUDIO ENGINE (MECHANICAL CLACKS, CHIMES, WHOOSH & SIREN)
+       ========================================================================= */
+    class PinballAudio {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      unlock() {
+        try {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        } catch (_) {}
+      }
+
+      setMuted(m) {
+        this.muted = m;
+      }
+
+      playFlipper(up = true) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(up ? 190 : 120, now);
+        osc.frequency.exponentialRampToValueAtTime(up ? 72 : 55, now + 0.055);
+        gain.gain.setValueAtTime(up ? 0.22 : 0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.065);
+        this._noise(0.03, up ? 0.09 : 0.04, 1800);
+      }
+
+      playBumper(combo = 1) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const semis = [0, 2, 4, 7, 9, 12, 14, 16, 19];
+        const freq = 360 * Math.pow(2, semis[Math.min(combo, semis.length - 1)] / 12);
+
+        const osc = this.ctx.createOscillator();
+        const sub = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        sub.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.45, now + 0.09);
+        sub.frequency.setValueAtTime(140, now);
+        sub.frequency.exponentialRampToValueAtTime(48, now + 0.11);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 2600;
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        osc.connect(filter).connect(gain);
+        sub.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now); sub.start(now);
+        osc.stop(now + 0.15); sub.stop(now + 0.15);
+      }
+
+      playSlingshot() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(95, now + 0.08);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      }
+
+      playDropTarget() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        [660, 990].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + i * 0.04);
+          gain.gain.setValueAtTime(0.15, now + i * 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.16);
+          osc.connect(gain).connect(this.ctx.destination);
+          osc.start(now + i * 0.04);
+          osc.stop(now + i * 0.04 + 0.17);
+        });
+      }
+
+      playRampWhoosh() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(1480, now + 0.36);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.44);
+      }
+
+      playRollover() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(1320, now + 0.08);
+        gain.gain.setValueAtTime(0.13, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      }
+
+      playSpinnerTick(pitchBoost = 0) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        const f = 1150 + Math.min(pitchBoost * 95, 1100);
+        osc.frequency.setValueAtTime(f, now);
+        osc.frequency.exponentialRampToValueAtTime(f * 0.65, now + 0.028);
+        gain.gain.setValueAtTime(0.11, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.032);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.036);
+      }
+
+      playKickback() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(920, now + 0.14);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.19);
+        this._noise(0.08, 0.12, 2400);
+      }
+
+      playPlungerRelease(power) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(110 + power * 180, now);
+        osc.frequency.exponentialRampToValueAtTime(520 + power * 240, now + 0.12);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      }
+
+      playDrain() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.exponentialRampToValueAtTime(58, now + 0.42);
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.47);
+      }
+
+      playMultiballFanfare() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.value = 2800;
+          const t = now + i * 0.075;
+          osc.frequency.setValueAtTime(f, t);
+          gain.gain.setValueAtTime(0.15, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+          osc.connect(filter).connect(gain).connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.36);
+        });
+      }
+
+      playTilt() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(92, now);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.58);
+      }
+
+      _noise(duration, vol, freq) {
+        const len = Math.floor(this.ctx.sampleRate * duration);
+        const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        const flt = this.ctx.createBiquadFilter();
+        flt.type = 'highpass';
+        flt.frequency.value = freq;
+        const g = this.ctx.createGain();
+        g.gain.value = vol;
+        src.connect(flt).connect(g).connect(this.ctx.destination);
+        src.start();
+      }
+    }
+
+    const audio = new PinballAudio();
+
+    /* =========================================================================
+       2. SCENE, RENDERER, UNREAL BLOOM, PMREM REFLECTIONS & LIGHTING
+       ========================================================================= */
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050816);
+    scene.fog = new THREE.FogExp2(0x050816, 0.085);
+
+    const camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.04, 45);
+    const cameraRig = new THREE.Group();
+    cameraRig.add(camera);
+    scene.add(cameraRig);
+
+    const CAM_MODES = [
+      { pos: new THREE.Vector3(0, 1.66, 0.94), look: new THREE.Vector3(0, 0.96, -0.18), name: 'ARCADE' },
+      { pos: new THREE.Vector3(0, 2.24, 0.42), look: new THREE.Vector3(0, 0.98, -0.14), name: 'OVERHEAD' },
+      { pos: new THREE.Vector3(0, 1.44, 0.78), look: new THREE.Vector3(0, 1.00, -0.34), name: 'LOW ACTION' }
+    ];
+    camera.position.copy(CAM_MODES[0].pos);
+    camera.lookAt(CAM_MODES[0].look);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.94;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.xr.enabled = true;
+    renderer.xr.setReferenceSpaceType('local-floor');
+    container.appendChild(renderer.domElement);
+
+    // Subtle Desktop Neon Bloom Post-Processing (automatically bypassed in WebXR)
+    const composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      0.22,  // subtle crisp strength (prevents whiteout)
+      0.20,  // tight radius
+      0.92   // high threshold so only peak highlights bloom
+    );
+    composer.addPass(bloomPass);
+
+    // Procedural Neon Studio Reflection Map so Chrome Pinballs, Wireforms & Glass Gleam!
+    function generateNeonEnvMap() {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const envScene = new THREE.Scene();
+      envScene.background = new THREE.Color(0x070a24);
+
+      const strips = [
+        { pos: [-3.2, 2.8,  0.0], col: 0x00f3ff, sz: [0.35, 3.8, 5.2] },
+        { pos: [ 3.2, 2.8,  0.0], col: 0xff00cc, sz: [0.35, 3.8, 5.2] },
+        { pos: [ 0.0, 4.2, -1.8], col: 0xffb822, sz: [4.6,  0.35, 2.2] },
+        { pos: [ 0.0, 2.4,  3.4], col: 0x00d8ff, sz: [4.8,  1.6,  0.35] },
+        { pos: [-1.8, 4.0, -3.2], col: 0x8b2cff, sz: [2.4,  0.4,  2.8] },
+        { pos: [ 1.8, 4.0, -3.2], col: 0xff2bd6, sz: [2.4,  0.4,  2.8] },
+        { pos: [ 0.0, 1.2, -3.8], col: 0x00ffaa, sz: [3.2,  1.2,  0.25] }
+      ];
+      strips.forEach(s => {
+        const m = new THREE.Mesh(
+          new THREE.BoxGeometry(...s.sz),
+          new THREE.MeshBasicMaterial({ color: s.col })
+        );
+        m.position.set(...s.pos);
+        envScene.add(m);
+      });
+      const rt = pmrem.fromScene(envScene, 0.035);
+      pmrem.dispose();
+      return rt.texture;
+    }
+    scene.environment = generateNeonEnvMap();
+
+    // Cyber-Arcade Room Lighting
+    scene.add(new THREE.HemisphereLight(0x9ad4ff, 0x1b0b38, 0.68));
+
+    const overheadLight = new THREE.DirectionalLight(0xd4f4ff, 0.95);
+    overheadLight.position.set(0.4, 3.6, 0.8);
+    scene.add(overheadLight);
+
+    const cyanFill = new THREE.PointLight(0x00f3ff, 1.05, 7.5, 1.5);
+    cyanFill.position.set(-1.3, 1.85, -0.5);
+    scene.add(cyanFill);
+
+    const magentaFill = new THREE.PointLight(0xff00cc, 1.05, 7.5, 1.5);
+    magentaFill.position.set(1.3, 1.85, -0.5);
+    scene.add(magentaFill);
+
+    // Procedural Radial Glow Texture Helper
+    function createGlowTex(stops, size = 128) {
+      const c = document.createElement('canvas');
+      c.width = size; c.height = size;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      stops.forEach(([o, col]) => g.addColorStop(o, col));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, size, size);
+      const tex = new THREE.CanvasTexture(c);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    const fireTrailTex = createGlowTex([
+      [0.0,  'rgba(255, 255, 240, 1.0)'],
+      [0.24, 'rgba(255, 195, 70, 0.92)'],
+      [0.54, 'rgba(255, 95, 10, 0.45)'],
+      [1.0,  'rgba(0, 0, 0, 0.0)']
+    ]);
+
+    const cyanTrailTex = createGlowTex([
+      [0.0,  'rgba(240, 255, 255, 1.0)'],
+      [0.26, 'rgba(0, 243, 255, 0.9)'],
+      [0.58, 'rgba(0, 120, 255, 0.36)'],
+      [1.0,  'rgba(0, 0, 0, 0.0)']
+    ]);
+
+    const magentaTrailTex = createGlowTex([
+      [0.0,  'rgba(255, 240, 255, 1.0)'],
+      [0.26, 'rgba(255, 0, 204, 0.92)'],
+      [0.58, 'rgba(155, 0, 255, 0.38)'],
+      [1.0,  'rgba(0, 0, 0, 0.0)']
+    ]);
+
+    /* =========================================================================
+       3. ENVIRONMENT: FUTURISTIC DARK CYBER-ARCADE ROOM & ANIMATED CABINETS
+       ========================================================================= */
+    const animatedCabScreens = [];
+    const ambientMotes = [];
+
+    function buildCyberArcadeRoom() {
+      const room = new THREE.Group();
+
+      // Anti-aliased shader wireframe floor
+      const floorMat = new THREE.ShaderMaterial({
+        vertexShader: `
+          varying vec3 vWp;
+          void main() {
+            vec4 wp = modelMatrix * vec4(position, 1.0);
+            vWp = wp.xyz;
+            gl_Position = projectionMatrix * viewMatrix * wp;
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vWp;
+          float aaGrid(vec2 p, float w) {
+            vec2 g = abs(fract(p - 0.5) - 0.5) / max(fwidth(p), vec2(0.0001));
+            return 1.0 - smoothstep(0.0, w, min(g.x, g.y));
+          }
+          void main() {
+            float g1 = aaGrid(vWp.xz / 0.55, 1.45);
+            float d = length(vWp.xz);
+            float fade = exp(-d * 0.22);
+            vec3 col = vec3(0.018, 0.028, 0.085);
+            col += vec3(0.12, 0.42, 0.95) * g1 * 0.55 * fade;
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `
+      });
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(0, 0, -1.8);
+      room.add(floor);
+
+      // Subtle indigo wireframe walls around the arcade room
+      const wallVerts = [];
+      const rw = 3.3, rh = 3.8, rzFront = 2.0, rzBack = -4.8;
+      for (let z = rzFront; z >= rzBack; z -= 0.55) {
+        wallVerts.push(-rw, 0, z, -rw, rh, z);
+        wallVerts.push( rw, 0, z,  rw, rh, z);
+      }
+      for (let y = 0.55; y <= rh; y += 0.55) {
+        wallVerts.push(-rw, y, rzFront, -rw, y, rzBack);
+        wallVerts.push( rw, y, rzFront,  rw, y, rzBack);
+        wallVerts.push(-rw, y, rzBack,   rw, y, rzBack);
+      }
+      for (let x = -rw; x <= rw; x += 0.55) {
+        wallVerts.push(x, 0, rzBack, x, rh, rzBack);
+      }
+      const wallGeo = new THREE.BufferGeometry();
+      wallGeo.setAttribute('position', new THREE.Float32BufferAttribute(wallVerts, 3));
+      room.add(new THREE.LineSegments(
+        wallGeo,
+        new THREE.LineBasicMaterial({ color: 0x1e4099, transparent: true, opacity: 0.34 })
+      ));
+
+      // Overhead Glowing Cyan & Magenta Ceiling Neon Light Tubes
+      const tubeGeo = new THREE.CylinderGeometry(0.022, 0.022, 4.4, 12);
+      tubeGeo.rotateX(Math.PI / 2);
+      [[-1.6, 0x00f3ff], [0.0, 0x8b2cff], [1.6, 0xff00cc]].forEach(([tx, col]) => {
+        const tube = new THREE.Mesh(tubeGeo, new THREE.MeshBasicMaterial({ color: col }));
+        tube.position.set(tx, 3.45, -1.6);
+        room.add(tube);
+      });
+
+      // Glowing "CYBER ARCADE" Neon Wall Sign in the Background
+      const signCanvas = document.createElement('canvas');
+      signCanvas.width = 1024; signCanvas.height = 256;
+      const sCtx = signCanvas.getContext('2d');
+      sCtx.fillStyle = 'rgba(6, 8, 24, 0.82)';
+      sCtx.beginPath();
+      sCtx.roundRect(16, 16, 992, 224, 28);
+      sCtx.fill();
+      sCtx.strokeStyle = '#00f3ff';
+      sCtx.lineWidth = 8;
+      sCtx.shadowColor = '#00f3ff';
+      sCtx.shadowBlur = 24;
+      sCtx.stroke();
+      sCtx.textAlign = 'center';
+      sCtx.font = '900 104px "Orbitron", system-ui, sans-serif';
+      sCtx.fillStyle = '#ff38dc';
+      sCtx.shadowColor = '#ff00cc';
+      sCtx.shadowBlur = 28;
+      sCtx.fillText('CYBER ARCADE', 512, 164);
+      const signTex = new THREE.CanvasTexture(signCanvas);
+      const signMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.2, 0.8),
+        new THREE.MeshBasicMaterial({ map: signTex, transparent: true })
+      );
+      signMesh.position.set(0, 2.72, -4.74);
+      room.add(signMesh);
+
+      // Stylized Retro Arcade Cabinets with Animated Glowing Screens
+      const screenDefs = [
+        { type: 'horizon', bg: '#0c0824', fg: '#00f3ff', accent: '#ff00cc', label: 'NEON RUN' },
+        { type: 'shooter', bg: '#14081c', fg: '#39ff14', accent: '#ffaa00', label: 'SWARM 3D' },
+        { type: 'maze',    bg: '#091426', fg: '#ff8800', accent: '#00f3ff', label: 'CYBER MAZE' },
+        { type: 'horizon', bg: '#160928', fg: '#ff00cc', accent: '#39ff14', label: 'PULSE X' }
+      ];
+
+      function createAnimatedCabScreen(def) {
+        const c = document.createElement('canvas');
+        c.width = 128; c.height = 128;
+        const ctx = c.getContext('2d');
+        const tex = new THREE.CanvasTexture(c);
+        tex.needsUpdate = true;
+        animatedCabScreens.push({ ctx, tex, def });
+        return tex;
+      }
+
+      const cabBodyMat = new THREE.MeshStandardMaterial({
+        color: 0x0b1024,
+        roughness: 0.42,
+        metalness: 0.65
+      });
+      const cabWireMat = new THREE.LineBasicMaterial({ color: 0x00a8ff, transparent: true, opacity: 0.34 });
+
+      const cabZPositions = [-0.2, -1.25, -2.3, -3.35];
+      [-1, 1].forEach(side => {
+        cabZPositions.forEach((cz, idx) => {
+          const def = screenDefs[(idx + (side > 0 ? 2 : 0)) % screenDefs.length];
+          const cab = new THREE.Group();
+          cab.position.set(side * 2.55, 0, cz);
+          cab.rotation.y = side * -Math.PI / 2 + side * -0.14;
+
+          const bodyGeo = new THREE.BoxGeometry(0.66, 1.78, 0.64);
+          const body = new THREE.Mesh(bodyGeo, cabBodyMat);
+          body.position.y = 0.89;
+          cab.add(body);
+          const wire = new THREE.LineSegments(new THREE.EdgesGeometry(bodyGeo), cabWireMat);
+          wire.position.y = 0.89;
+          cab.add(wire);
+
+          const scr = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.50, 0.42),
+            new THREE.MeshBasicMaterial({ map: createAnimatedCabScreen(def) })
+          );
+          scr.position.set(0, 1.24, 0.328);
+          scr.rotation.x = -0.18;
+          cab.add(scr);
+
+          const marq = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.56, 0.16),
+            new THREE.MeshBasicMaterial({ color: def.accent })
+          );
+          marq.position.set(0, 1.66, 0.326);
+          cab.add(marq);
+
+          room.add(cab);
+        });
+      });
+
+      // Drifting Ambient Neon Light Motes Floating in the Arcade Room
+      const moteTexList = [cyanTrailTex, magentaTrailTex, fireTrailTex];
+      for (let i = 0; i < 42; i++) {
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: moteTexList[i % 3],
+          transparent: true,
+          opacity: 0.38,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        }));
+        const baseX = (Math.random() - 0.5) * 5.6;
+        const baseY = 0.6 + Math.random() * 2.6;
+        const baseZ = -4.2 + Math.random() * 4.4;
+        sp.position.set(baseX, baseY, baseZ);
+        const sc = 0.045 + Math.random() * 0.065;
+        sp.scale.set(sc, sc, 1);
+        room.add(sp);
+        ambientMotes.push({
+          sp, baseX, baseY, baseZ,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.4 + Math.random() * 0.7
+        });
+      }
+
+      return room;
+    }
+
+    function updateAnimatedCabScreens(t) {
+      for (let i = 0; i < animatedCabScreens.length; i++) {
+        const { ctx, tex, def } = animatedCabScreens[i];
+        ctx.fillStyle = def.bg;
+        ctx.fillRect(0, 0, 128, 128);
+
+        if (def.type === 'horizon') {
+          ctx.fillStyle = def.accent;
+          ctx.beginPath(); ctx.arc(64, 46, 20, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = def.fg;
+          ctx.lineWidth = 2;
+          const off = (t * 24 + i * 7) % 14;
+          for (let y = 66 + off; y < 128; y += 14) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(128, y); ctx.stroke();
+          }
+        } else if (def.type === 'shooter') {
+          ctx.fillStyle = def.fg;
+          for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 5; c++) {
+              const ex = 22 + c * 20 + Math.sin(t * 2.5 + r) * 8;
+              ctx.fillRect(ex - 4, 22 + r * 16, 8, 6);
+            }
+          }
+          const bx = 64 + Math.sin(t * 3.1 + i) * 34;
+          ctx.fillStyle = def.accent;
+          ctx.fillRect(bx - 6, 98, 12, 8);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(bx - 1, 92 - ((t * 90 + i * 20) % 70), 2, 10);
+        } else {
+          ctx.strokeStyle = def.accent;
+          ctx.lineWidth = 3;
+          ctx.strokeRect(14, 14, 100, 82);
+          ctx.strokeRect(32, 30, 64, 50);
+          const px = 64 + Math.cos(t * 2.2 + i) * 38;
+          const py = 55 + Math.sin(t * 2.2 + i) * 28;
+          ctx.fillStyle = def.fg;
+          ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(def.label, 64, 118);
+        tex.needsUpdate = true;
+      }
+    }
+
+    scene.add(buildCyberArcadeRoom());
+
+    /* =========================================================================
+       4. PINBALL TABLE DIMENSIONS, EXACT 1.5x FLIPPER MATH & CABINET FRAME
+       ========================================================================= */
+    const BALL_RADIUS = 0.0205;
+    const BALL_DIAMETER = BALL_RADIUS * 2; // 0.041
+
+    const TABLE = {
+      width: 0.78,
+      length: 1.48,
+      halfW: 0.39,
+      halfL: 0.74,
+      shooterW: 0.078,
+      dividerX: 0.312, // Playfield X spans -0.39 to +0.312
+      ballR: BALL_RADIUS,
+      gravity: 1.42,
+      tiltDeg: 6.5
+    };
+
+    // Playfield center X (between left wall -0.39 and shooter divider +0.312)
+    const CX = (-TABLE.halfW + TABLE.dividerX) * 0.5; // -0.039
+
+    // Exact 1.5x Ball-Diameter Center Flipper Gap Math
+    const FLIPPER_TIP_RADIUS = 0.014;
+    const FLIPPER_PIVOT_OFFSET = 0.162;
+    const FLIPPER_PIVOT_Z = 0.445;
+    const FLIPPER_REST_ANGLE = 0.42;    // ~24 deg downward
+    const FLIPPER_ACTIVE_ANGLE = -0.52; // ~30 deg upward
+    const TARGET_CENTER_GAP = 1.5 * BALL_DIAMETER; // 0.0615
+    const FLIPPER_LENGTH = (FLIPPER_PIVOT_OFFSET - FLIPPER_TIP_RADIUS - TARGET_CENTER_GAP * 0.5) / Math.cos(FLIPPER_REST_ANGLE);
+
+    // Master Pinball Machine Root (tilted 6.5° toward player)
+    const cabinetRoot = new THREE.Group();
+    cabinetRoot.position.set(0, 0.98, -0.18);
+    scene.add(cabinetRoot);
+
+    const tableGroup = new THREE.Group();
+    tableGroup.rotation.x = THREE.MathUtils.degToRad(TABLE.tiltDeg);
+    cabinetRoot.add(tableGroup);
+
+    // Shared PBR Metallic Materials
+    const chromeMat = new THREE.MeshStandardMaterial({
+      color: 0xdceeff,
+      roughness: 0.14,
+      metalness: 0.96
+    });
+
+    const gunmetalMat = new THREE.MeshStandardMaterial({
+      color: 0x101830,
+      roughness: 0.36,
+      metalness: 0.76
+    });
+
+    const ballGeo = new THREE.SphereGeometry(TABLE.ballR, 28, 24);
+    const ballMat = new THREE.MeshStandardMaterial({
+      color: 0xf4faff,
+      roughness: 0.06,
+      metalness: 1.0
+    });
+
+    // High-Res Playfield Artwork Texture (1024x2048 Cyber-Circuit Traces & NEON OVERDRIVE Starburst)
+    function createPlayfieldTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024; c.height = 2048;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, 0, 2048);
+      grad.addColorStop(0, '#0a0f2c');
+      grad.addColorStop(0.45, '#070b22');
+      grad.addColorStop(1, '#040614');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1024, 2048);
+
+      // Subtle perspective cyber grid
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.11)';
+      ctx.lineWidth = 2;
+      for (let x = 0; x <= 1024; x += 64) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 2048); ctx.stroke();
+      }
+      for (let y = 0; y <= 2048; y += 64) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1024, y); ctx.stroke();
+      }
+
+      // Glowing Cyber-Circuit Traces radiating across the deck
+      const traces = [
+        { col: 'rgba(0, 243, 255, 0.32)', pts: [[90, 1850], [90, 1480], [210, 1360], [210, 900], [340, 770]] },
+        { col: 'rgba(255, 0, 204, 0.30)', pts: [[830, 1850], [830, 1480], [710, 1360], [710, 900], [580, 770]] },
+        { col: 'rgba(0, 255, 160, 0.28)', pts: [[160, 1180], [260, 1080], [260, 620], [380, 500]] },
+        { col: 'rgba(255, 170, 0, 0.28)', pts: [[760, 1180], [660, 1080], [660, 620], [540, 500]] }
+      ];
+      traces.forEach(tr => {
+        ctx.strokeStyle = tr.col;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        tr.pts.forEach(([px, py], idx) => idx === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py));
+        ctx.stroke();
+        tr.pts.forEach(([px, py]) => {
+          ctx.fillStyle = tr.col;
+          ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2); ctx.fill();
+        });
+      });
+
+      // Radial Neon Starburst Centerpiece ("NEON OVERDRIVE")
+      const cx = 460, cy = 1150;
+      const rGrad = ctx.createRadialGradient(cx, cy, 18, cx, cy, 270);
+      rGrad.addColorStop(0, 'rgba(0, 243, 255, 0.34)');
+      rGrad.addColorStop(0.45, 'rgba(255, 0, 204, 0.18)');
+      rGrad.addColorStop(0.8, 'rgba(110, 20, 255, 0.08)');
+      rGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = rGrad;
+      ctx.beginPath(); ctx.arc(cx, cy, 270, 0, Math.PI * 2); ctx.fill();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      for (let i = 0; i < 24; i++) {
+        ctx.rotate(Math.PI / 12);
+        ctx.strokeStyle = i % 2 === 0 ? 'rgba(0, 243, 255, 0.22)' : 'rgba(255, 0, 204, 0.18)';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(95, 0); ctx.lineTo(235, 0); ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.55)';
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(cx, cy, 152, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 0, 204, 0.52)';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(cx, cy, 198, 0, Math.PI * 2); ctx.stroke();
+
+      ctx.fillStyle = 'rgba(0, 243, 255, 0.55)';
+      ctx.font = '900 44px "Orbitron", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('NEON', cx, cy - 10);
+      ctx.fillStyle = 'rgba(255, 45, 210, 0.62)';
+      ctx.font = '900 34px "Orbitron", sans-serif';
+      ctx.fillText('OVERDRIVE', cx, cy + 36);
+
+      ctx.strokeStyle = 'rgba(180, 215, 255, 0.22)';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(10, 10, 1004, 2028);
+
+      ctx.fillStyle = 'rgba(255, 136, 0, 0.10)';
+      ctx.fillRect(916, 460, 98, 1570);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return tex;
+    }
+
+    // Satin-Clearcoated Playfield Surface (balanced reflection, zero white glare)
+    const deckMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(TABLE.width, TABLE.length),
+      new THREE.MeshPhysicalMaterial({
+        map: createPlayfieldTexture(),
+        roughness: 0.42,
+        metalness: 0.16,
+        clearcoat: 0.28,
+        clearcoatRoughness: 0.38,
+        reflectivity: 0.45
+      })
+    );
+    deckMesh.rotation.x = -Math.PI / 2;
+    tableGroup.add(deckMesh);
+
+    // Dynamic Illuminated Playfield Insert Rings (2X, 3X, 4X, 5X, LOCK, JACKPOT, KICKBACK, BALL SAVER)
+    const playfieldInserts = [];
+    function buildPlayfieldInserts() {
+      const insertSpecs = [
+        { id: '2X',       label: '2X',   x: CX - 0.095, z: 0.215, r: 0.024, col: '#00f3ff' },
+        { id: '3X',       label: '3X',   x: CX - 0.032, z: 0.245, r: 0.024, col: '#00ff88' },
+        { id: '4X',       label: '4X',   x: CX + 0.032, z: 0.245, r: 0.024, col: '#ffaa00' },
+        { id: '5X',       label: '5X',   x: CX + 0.095, z: 0.215, r: 0.024, col: '#ff00cc' },
+        { id: 'LOCK',     label: 'LOCK', x: CX - 0.125, z: 0.015, r: 0.028, col: '#00f3ff' },
+        { id: 'JACKPOT',  label: 'JACK', x: CX + 0.125, z: 0.015, r: 0.028, col: '#ff00cc' },
+        { id: 'KICKBACK', label: 'KICK', x: -TABLE.halfW + 0.036, z: 0.355, r: 0.022, col: '#00f3ff' },
+        { id: 'SAVER',    label: 'SAVE', x: CX,         z: 0.365, r: 0.028, col: '#00ff88' }
+      ];
+
+      insertSpecs.forEach(spec => {
+        const c = document.createElement('canvas');
+        c.width = 128; c.height = 128;
+        const ctx = c.getContext('2d');
+        const g = ctx.createRadialGradient(64, 64, 8, 64, 64, 60);
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(0.42, spec.col);
+        g.addColorStop(0.85, 'rgba(0,0,0,0.2)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(64, 64, 60, 0, Math.PI * 2); ctx.fill();
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(64, 64, 52, 0, Math.PI * 2); ctx.stroke();
+
+        ctx.fillStyle = '#050816';
+        ctx.font = '900 32px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(spec.label, 64, 66);
+
+        const tex = new THREE.CanvasTexture(c);
+        const mat = new THREE.MeshBasicMaterial({
+          map: tex,
+          transparent: true,
+          opacity: 0.22,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(spec.r * 2, spec.r * 2), mat);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.position.set(spec.x, 0.0032, spec.z);
+        tableGroup.add(mesh);
+        playfieldInserts.push({ id: spec.id, mat, baseCol: spec.col });
+      });
+    }
+    buildPlayfieldInserts();
+
+    // Cabinet Outer Box, Brushed Chrome Rails, Animated Interior LED Strips & Legs
+    const cabinetLEDs = [];
+    let leftFlipBtnMesh = null;
+    let plungerRodGroup = null;
+    let plungerSpringMesh = null;
+    let leftHoloHand = null;
+    let rightHoloHand = null;
+
+    function buildCabinetFrame() {
+      const cab = new THREE.Group();
+
+      // Main dark gunmetal body under playfield
+      const underBox = new THREE.Mesh(new THREE.BoxGeometry(TABLE.width + 0.08, 0.22, TABLE.length + 0.12), gunmetalMat);
+      underBox.position.set(0, -0.115, 0.01);
+      cab.add(underBox);
+
+      // Side walls + Brushed Chrome Side Rails + Segmented Chasing Interior LED Bars
+      const ledCountPerSide = 18;
+      const ledSegLen = (TABLE.length - 0.08) / ledCountPerSide;
+      const ledGeo = new THREE.BoxGeometry(0.010, 0.015, ledSegLen * 0.78);
+
+      [-1, 1].forEach(s => {
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, TABLE.length + 0.12), gunmetalMat);
+        wall.position.set(s * (TABLE.halfW + 0.02), 0.03, 0.01);
+        cab.add(wall);
+
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.026, TABLE.length + 0.13), chromeMat);
+        rail.position.set(s * (TABLE.halfW + 0.022), 0.125, 0.01);
+        cab.add(rail);
+
+        for (let i = 0; i < ledCountPerSide; i++) {
+          const baseHex = s < 0 ? 0x00f3ff : 0xff00cc;
+          const ledMat = new THREE.MeshBasicMaterial({ color: baseHex });
+          const led = new THREE.Mesh(ledGeo, ledMat);
+          const lz = TABLE.halfL - 0.04 - (i + 0.5) * ledSegLen;
+          led.position.set(s * (TABLE.halfW - 0.004), 0.048, lz);
+          cab.add(led);
+          cabinetLEDs.push({ mat: ledMat, side: s, idx: i, baseHex });
+        }
+      });
+
+      // Back wall inside cabinet
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(TABLE.width + 0.08, 0.20, 0.04), gunmetalMat);
+      backWall.position.set(0, 0.02, -TABLE.halfL - 0.03);
+      cab.add(backWall);
+
+      // Front Apron & Brushed Chrome Lockbar
+      const frontApron = new THREE.Mesh(new THREE.BoxGeometry(TABLE.width + 0.08, 0.18, 0.06), gunmetalMat);
+      frontApron.position.set(0, 0.03, TABLE.halfL + 0.04);
+      cab.add(frontApron);
+
+      const lockbar = new THREE.Mesh(new THREE.BoxGeometry(TABLE.width + 0.10, 0.038, 0.095), chromeMat);
+      lockbar.position.set(0, 0.125, TABLE.halfL + 0.055);
+      cab.add(lockbar);
+
+      // Subtle Reflective Playfield Glass
+      const glass = new THREE.Mesh(
+        new THREE.PlaneGeometry(TABLE.width, TABLE.length),
+        new THREE.MeshPhysicalMaterial({
+          color: 0xd8f4ff,
+          roughness: 0.04,
+          metalness: 0.08,
+          transmission: 0.92,
+          transparent: true,
+          opacity: 0.14,
+          depthWrite: false
+        })
+      );
+      glass.rotation.x = -Math.PI / 2;
+      glass.position.y = 0.112;
+      cab.add(glass);
+
+      // 4 Sturdy Brushed Chrome Cabinet Legs
+      const legGeo = new THREE.BoxGeometry(0.052, 1.05, 0.052);
+      [[-0.39, -0.68], [0.39, -0.68], [-0.39, 0.68], [0.39, 0.68]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, chromeMat);
+        leg.position.set(lx, -0.58, lz);
+        cab.add(leg);
+      });
+
+      // Front-Left Glowing Cyan Flipper Button
+      const btnBase = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.022, 20), chromeMat);
+      btnBase.position.set(-TABLE.halfW - 0.022, 0.145, TABLE.halfL - 0.04);
+      cab.add(btnBase);
+
+      leftFlipBtnMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.028, 0.028, 0.022, 20),
+        new THREE.MeshBasicMaterial({ color: 0x00f3ff })
+      );
+      leftFlipBtnMesh.position.set(-TABLE.halfW - 0.022, 0.158, TABLE.halfL - 0.04);
+      cab.add(leftFlipBtnMesh);
+
+      // Animated Coiled Chrome Spring Plunger (Right Shooter Lane)
+      const plungerX = (TABLE.dividerX + TABLE.halfW) * 0.5;
+      plungerRodGroup = new THREE.Group();
+      plungerRodGroup.position.set(plungerX, 0.025, TABLE.halfL + 0.03);
+      cab.add(plungerRodGroup);
+
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.24, 14), chromeMat);
+      rod.rotation.x = Math.PI / 2;
+      rod.position.z = 0.04;
+      plungerRodGroup.add(rod);
+
+      const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.016, 16), new THREE.MeshBasicMaterial({ color: 0x00f3ff }));
+      tip.rotation.x = Math.PI / 2;
+      tip.position.z = -0.075;
+      plungerRodGroup.add(tip);
+
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.028, 18, 16), chromeMat);
+      knob.position.z = 0.16;
+      plungerRodGroup.add(knob);
+
+      // Coiled Spring Tube
+      const springPts = [];
+      for (let i = 0; i <= 40; i++) {
+        const t = i / 40;
+        const a = t * Math.PI * 12;
+        springPts.push(new THREE.Vector3(Math.cos(a) * 0.016, Math.sin(a) * 0.016, -0.06 + t * 0.14));
+      }
+      plungerSpringMesh = new THREE.Mesh(
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(springPts), 56, 0.0032, 6, false),
+        chromeMat
+      );
+      plungerSpringMesh.position.set(plungerX, 0.025, TABLE.halfL + 0.03);
+      cab.add(plungerSpringMesh);
+
+      // Translucent Cyan Wireframe Holographic VR Hands resting on Lockbar / Plunger
+      function createHoloHand(side) {
+        const g = new THREE.Group();
+        const fillMat = new THREE.MeshBasicMaterial({
+          color: 0x00e5ff,
+          transparent: true,
+          opacity: 0.22,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const wireMat = new THREE.LineBasicMaterial({
+          color: 0x66ffff,
+          transparent: true,
+          opacity: 0.72,
+          blending: THREE.AdditiveBlending
+        });
+
+        const palmGeo = new THREE.BoxGeometry(0.088, 0.026, 0.105);
+        g.add(new THREE.Mesh(palmGeo, fillMat), new THREE.LineSegments(new THREE.EdgesGeometry(palmGeo), wireMat));
+
+        const armGeo = new THREE.CylinderGeometry(0.032, 0.042, 0.20, 12);
+        armGeo.rotateX(Math.PI / 2);
+        const arm = new THREE.Mesh(armGeo, fillMat);
+        arm.position.set(side * 0.02, -0.01, 0.15);
+        arm.rotation.y = side * -0.18;
+        g.add(arm, new THREE.LineSegments(new THREE.EdgesGeometry(armGeo), wireMat).translateZ(0.15));
+
+        for (let f = 0; f < 4; f++) {
+          const fGeo = new THREE.CapsuleGeometry(0.009, 0.048, 4, 8);
+          fGeo.rotateX(Math.PI / 2);
+          const fm = new THREE.Mesh(fGeo, fillMat);
+          fm.position.set((f - 1.5) * 0.021, -0.004, -0.072);
+          fm.rotation.x = 0.24;
+          g.add(fm);
+        }
+        return g;
+      }
+
+      leftHoloHand = createHoloHand(-1);
+      leftHoloHand.position.set(-TABLE.halfW - 0.03, 0.175, TABLE.halfL + 0.03);
+      leftHoloHand.rotation.y = -0.22;
+      cab.add(leftHoloHand);
+
+      rightHoloHand = createHoloHand(1);
+      rightHoloHand.position.set(plungerX + 0.04, 0.085, TABLE.halfL + 0.22);
+      rightHoloHand.rotation.y = 0.22;
+      cab.add(rightHoloHand);
+
+      return cab;
+    }
+
+    tableGroup.add(buildCabinetFrame());
+
+    /* =========================================================================
+       5. UPRIGHT BACKBOX: ANIMATED SYNTHWAVE TRANSLITE & LED SCOREBOARD
+       ========================================================================= */
+    const backglassGroup = new THREE.Group();
+    backglassGroup.position.set(0, 0.44, -TABLE.halfL - 0.05);
+    cabinetRoot.add(backglassGroup);
+
+    const backboxFrame = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.78, 0.14), gunmetalMat);
+    backglassGroup.add(backboxFrame);
+
+    // Upper Animated Cyber-Synthwave Backglass Translite
+    const bgCanvas = document.createElement('canvas');
+    bgCanvas.width = 1024; bgCanvas.height = 512;
+    const bgCtx = bgCanvas.getContext('2d');
+    const bgTex = new THREE.CanvasTexture(bgCanvas);
+    bgTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+    function updateBackglassTranslite(t) {
+      const ctx = bgCtx;
+      const w = 1024, h = 512;
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#07041c');
+      g.addColorStop(0.55, '#1d0a48');
+      g.addColorStop(1, '#09183c');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+
+      // Sweeping Neon Laser Beams
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 4; i++) {
+        const angle = Math.sin(t * (0.9 + i * 0.25) + i * 1.4) * 0.65;
+        ctx.strokeStyle = i % 2 === 0 ? 'rgba(0, 243, 255, 0.28)' : 'rgba(255, 0, 204, 0.26)';
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.moveTo(i < 2 ? 0 : w, h);
+        ctx.lineTo(w / 2 + Math.sin(angle) * 520, 0);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Glowing Retro Synthwave Sun with Horizon Slices
+      const sunGrad = ctx.createLinearGradient(512, 70, 512, 320);
+      sunGrad.addColorStop(0, '#ffe455');
+      sunGrad.addColorStop(0.5, '#ff6600');
+      sunGrad.addColorStop(1, '#ff00cc');
+      ctx.fillStyle = sunGrad;
+      ctx.shadowColor = '#ff00cc';
+      ctx.shadowBlur = 32;
+      ctx.beginPath(); ctx.arc(512, 205, 132, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#18093d';
+      for (let sy = 215; sy < 340; sy += 20) {
+        ctx.fillRect(365, sy, 294, 5 + (sy - 215) * 0.05);
+      }
+
+      // Scrolling Perspective Grid Horizon
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.55)';
+      ctx.lineWidth = 3;
+      const scroll = (t * 48) % 36;
+      for (let gy = 335 + scroll; gy < h; gy += 36) {
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+      }
+      for (let gx = -6; gx <= 6; gx++) {
+        ctx.beginPath(); ctx.moveTo(512 + gx * 48, 335); ctx.lineTo(512 + gx * 195, h); ctx.stroke();
+      }
+
+      // Pulsing Equalizer Bars on Left & Right
+      const energy = state.multiballActive ? 1.35 : (1.0 + Math.min(state.combo * 0.1, 0.6));
+      for (let i = 0; i < 10; i++) {
+        const barH = (26 + Math.abs(Math.sin(t * 6.5 + i * 0.75)) * 95) * energy;
+        ctx.fillStyle = i % 2 === 0 ? '#00f3ff' : '#ff00cc';
+        ctx.fillRect(38 + i * 24, h - 24 - barH, 16, barH);
+        ctx.fillRect(w - 54 - i * 24, h - 24 - barH, 16, barH);
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 90px "Orbitron", system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#00f3ff';
+      ctx.shadowBlur = 28;
+      ctx.fillText('NEON PINBALL', 512, 232);
+      ctx.fillStyle = '#ffdd55';
+      ctx.font = '800 32px "Orbitron", system-ui, sans-serif';
+      ctx.shadowColor = '#ff8800';
+      ctx.fillText('OVERDRIVE  •  CYBER-ARCADE', 512, 294);
+      ctx.shadowBlur = 0;
+
+      bgTex.needsUpdate = true;
+    }
+
+    const bgArtMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.78, 0.42),
+      new THREE.MeshBasicMaterial({ map: bgTex })
+    );
+    bgArtMesh.position.set(0, 0.19, 0.075);
+    backglassGroup.add(bgArtMesh);
+
+    // Lower Neon-Magenta-Bordered Holographic LED Scoreboard (DMD)
+    const ledCanvas = document.createElement('canvas');
+    ledCanvas.width = 1024; ledCanvas.height = 288;
+    const ledCtx = ledCanvas.getContext('2d');
+    const ledTex = new THREE.CanvasTexture(ledCanvas);
+    ledTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+    const ledMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.76, 0.22),
+      new THREE.MeshBasicMaterial({ map: ledTex })
+    );
+    ledMesh.position.set(0, -0.22, 0.076);
+    backglassGroup.add(ledMesh);
+
+    /* =========================================================================
+       6. PLAYFIELD GEOMETRY, WALLS, ROLLOVERS, BUMPERS, RAMPS, SPINNER & CORE
+       ========================================================================= */
+    const wallSegments = [];
+    const bumpers = [];
+    const dropTargets = [];
+    const ramps = [];
+    const rolloverLanes = [];
+    const rubberPosts = [];
+
+    function addWallSeg(x1, z1, x2, z2, restitution = 0.65, colorHex = null, height = 0.032, isSlingshot = false, slingIdx = -1) {
+      wallSegments.push({ x1, z1, x2, z2, restitution, isSlingshot, slingIdx });
+
+      if (colorHex !== null) {
+        const dx = x2 - x1, dz = z2 - z1;
+        const len = Math.hypot(dx, dz);
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(len, height, 0.012),
+          new THREE.MeshStandardMaterial({
+            color: colorHex,
+            emissive: colorHex,
+            emissiveIntensity: 0.36,
+            roughness: 0.28,
+            metalness: 0.45
+          })
+        );
+        mesh.position.set((x1 + x2) * 0.5, height * 0.5, (z1 + z2) * 0.5);
+        mesh.rotation.y = -Math.atan2(dz, dx);
+        tableGroup.add(mesh);
+      }
+    }
+
+    // Outer Playfield Walls & Curved Upper Arch
+    const topArchZ = -0.37;
+    const archCenterX = 0.0;
+    const archR = TABLE.halfW;
+
+    // Left outer wall
+    addWallSeg(-TABLE.halfW, TABLE.halfL, -TABLE.halfW, topArchZ, 0.62, 0x00f3ff, 0.034);
+    // Right outer wall (shooter lane exterior)
+    addWallSeg(TABLE.halfW, TABLE.halfL, TABLE.halfW, topArchZ, 0.62, 0xff00cc, 0.034);
+    // Shooter lane interior divider wall (stops at z = -0.40 so plunged ball enters top arch)
+    addWallSeg(TABLE.dividerX, TABLE.halfL, TABLE.dividerX, -0.40, 0.55, 0x00f3ff, 0.032);
+    // Shooter lane bottom floor
+    addWallSeg(TABLE.dividerX, TABLE.halfL - 0.02, TABLE.halfW, TABLE.halfL - 0.02, 0.35);
+
+    // Smooth 24-segment curved upper arch
+    const archSegs = 24;
+    for (let i = 0; i < archSegs; i++) {
+      const a1 = Math.PI + (i / archSegs) * Math.PI;
+      const a2 = Math.PI + ((i + 1) / archSegs) * Math.PI;
+      const x1 = archCenterX + Math.cos(a1) * archR;
+      const z1 = topArchZ + Math.sin(a1) * (TABLE.halfL - Math.abs(topArchZ));
+      const x2 = archCenterX + Math.cos(a2) * archR;
+      const z2 = topArchZ + Math.sin(a2) * (TABLE.halfL - Math.abs(topArchZ));
+      addWallSeg(x1, z1, x2, z2, 0.52, i < archSegs / 2 ? 0x00f3ff : 0xff00cc, 0.034);
+    }
+
+    // Upper-Left Plunge Deflector Rail (steers arch-hugging plunged balls into pop bumpers!)
+    addWallSeg(-TABLE.halfW + 0.005, -0.43, -TABLE.halfW + 0.095, -0.27, 0.85, 0x00f3ff, 0.034);
+
+    // Mid-Wall Inward Deflectors (above left & right outlane splits)
+    addWallSeg(-TABLE.halfW + 0.005, 0.02, -TABLE.halfW + 0.068, 0.10, 0.85, 0x00f3ff, 0.032);
+    addWallSeg( TABLE.dividerX - 0.005, 0.02,  TABLE.dividerX - 0.068, 0.10, 0.85, 0xff00cc, 0.032);
+
+    // Top Rollover Lane Divider Fins & 4 Rollover Sensors (Skill Shot + Multiplier)
+    const finXs = [CX - 0.10, CX, CX + 0.10];
+    finXs.forEach(fx => {
+      addWallSeg(fx, -0.60, fx, -0.48, 0.7, 0x00f3ff, 0.03);
+    });
+    const laneXs = [CX - 0.15, CX - 0.05, CX + 0.05, CX + 0.15];
+    laneXs.forEach(lx => {
+      const mat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending });
+      const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.026, 0.09), mat);
+      strip.rotation.x = -Math.PI / 2;
+      strip.position.set(lx, 0.004, -0.54);
+      tableGroup.add(strip);
+      rolloverLanes.push({ x: lx, z: -0.54, lit: false, mat, cooldown: 0 });
+    });
+
+    // Lower Apron Drain Rails (wide unobstructed chute beneath flipper pivots!)
+    addWallSeg(-TABLE.halfW, 0.545, CX - 0.09, 0.665, 0.45, 0x00f3ff, 0.032);
+    addWallSeg( TABLE.dividerX, 0.545, CX + 0.09, 0.665, 0.45, 0x00f3ff, 0.032);
+
+    // Left & Right Inlane Guide Feeder Walls (anchored directly to flipper pivots at CX ± 0.162, 0.445)
+    const leftInlaneX = -TABLE.halfW + 0.078;
+    const rightInlaneX = TABLE.dividerX - 0.078;
+    addWallSeg(leftInlaneX,  0.19, leftInlaneX,  0.345, 0.58, 0x00f3ff, 0.03);
+    addWallSeg(leftInlaneX,  0.345, CX - FLIPPER_PIVOT_OFFSET, FLIPPER_PIVOT_Z, 0.52, 0x00f3ff, 0.03);
+    addWallSeg(rightInlaneX, 0.19, rightInlaneX, 0.345, 0.58, 0x00f3ff, 0.03);
+    addWallSeg(rightInlaneX, 0.345, CX + FLIPPER_PIVOT_OFFSET, FLIPPER_PIVOT_Z, 0.52, 0x00f3ff, 0.03);
+
+    // Glowing Rubber Bumper Posts at Top of Inlane Dividers
+    [leftInlaneX, rightInlaneX].forEach((px, i) => {
+      const col = i === 0 ? 0x00f3ff : 0xff00cc;
+      const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.9, roughness: 0.2 });
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.036, 16), mat);
+      post.position.set(px, 0.018, 0.188);
+      tableGroup.add(post);
+      rubberPosts.push({ x: px, z: 0.188, radius: 0.016, mat, col, flash: 0 });
+    });
+
+    // Active Left Outlane Kickback ('LASER KICK' Solenoid Piston)
+    const kickback = (() => {
+      const kx = -TABLE.halfW + 0.039;
+      const kz = 0.485;
+      const mat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, emissive: 0x00f3ff, emissiveIntensity: 1.0, roughness: 0.2 });
+      const piston = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.026, 0.028), mat);
+      piston.position.set(kx, 0.014, kz);
+      tableGroup.add(piston);
+      return { x: kx, z: kz, mesh: piston, mat };
+    })();
+
+    // Sculpted Reactive Glowing Triangular Slingshots (Chrome Acorn Posts + Glowing Elastic Bands + Underglow)
+    const slingshotMeshes = [];
+    const acornPostGeo = new THREE.CylinderGeometry(0.0085, 0.010, 0.046, 14);
+    const acornCapGeo = new THREE.SphereGeometry(0.0095, 12, 10);
+
+    function buildSlingshot(side, idx) {
+      const sx = side < 0 ? -TABLE.halfW + 0.145 : TABLE.dividerX - 0.145;
+      const innerX = side < 0 ? sx + 0.068 : sx - 0.068;
+      const pTop = [sx, 0.17];
+      const pBot = [sx, 0.31];
+      const pTip = [innerX, 0.34];
+
+      addWallSeg(pTop[0], pTop[1], pTip[0], pTip[1], 1.25, null, 0, true, idx);
+      addWallSeg(pTop[0], pTop[1], pBot[0], pBot[1], 0.6);
+      addWallSeg(pBot[0], pBot[1], pTip[0], pTip[1], 0.6);
+
+      const shape = new THREE.Shape();
+      shape.moveTo(pTop[0], -pTop[1]);
+      shape.lineTo(pBot[0], -pBot[1]);
+      shape.lineTo(pTip[0], -pTip[1]);
+      shape.closePath();
+
+      const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.022, bevelEnabled: true, bevelThickness: 0.005, bevelSize: 0.004, bevelSegments: 2 });
+      geo.rotateX(-Math.PI / 2);
+      const slingCol = side < 0 ? 0x00f3ff : 0xff00cc;
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: slingCol,
+        emissive: slingCol,
+        emissiveIntensity: 0.34,
+        roughness: 0.22,
+        metalness: 0.22,
+        clearcoat: 0.5,
+        transparent: true,
+        opacity: 0.68
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.y = 0.014;
+      tableGroup.add(mesh);
+
+      [pTop, pBot, pTip].forEach(([px, pz]) => {
+        const post = new THREE.Mesh(acornPostGeo, chromeMat);
+        post.position.set(px, 0.023, pz);
+        const cap = new THREE.Mesh(acornCapGeo, chromeMat);
+        cap.position.set(px, 0.047, pz);
+        tableGroup.add(post, cap);
+      });
+
+      const bandPts = [
+        new THREE.Vector3(pTop[0], 0.021, pTop[1]),
+        new THREE.Vector3(pBot[0], 0.021, pBot[1]),
+        new THREE.Vector3(pTip[0], 0.021, pTip[1])
+      ];
+      const bandCurve = new THREE.CatmullRomCurve3(bandPts, true, 'catmullrom', 0.08);
+      const bandMat = new THREE.MeshBasicMaterial({ color: slingCol });
+      const bandMesh = new THREE.Mesh(new THREE.TubeGeometry(bandCurve, 36, 0.0042, 8, true), bandMat);
+      tableGroup.add(bandMesh);
+
+      const underLight = new THREE.PointLight(slingCol, 0.24, 0.30, 1.6);
+      underLight.position.set((pTop[0] + pTip[0]) * 0.5, 0.035, 0.27);
+      tableGroup.add(underLight);
+
+      slingshotMeshes.push({ mesh, mat, bandMat, underLight, slingCol, flash: 0 });
+    }
+    buildSlingshot(-1, 0);
+    buildSlingshot( 1, 1);
+
+    // 3 Upper-Center Multi-Layered Sci-Fi Pop Bumpers (Chrome Dome + Acrylic Skirt + LED Ring + Pop Animation)
+    const bumperSpecs = [
+      { x: CX - 0.115, z: -0.34, color: 0xffaa00, name: 'GOLD' },
+      { x: CX,         z: -0.22, color: 0x00f3ff, name: 'CYAN' },
+      { x: CX + 0.115, z: -0.34, color: 0xff00cc, name: 'MAGENTA' }
+    ];
+
+    bumperSpecs.forEach(spec => {
+      const g = new THREE.Group();
+      g.position.set(spec.x, 0, spec.z);
+      tableGroup.add(g);
+
+      const baseRingMat = new THREE.MeshBasicMaterial({
+        color: spec.color,
+        transparent: true,
+        opacity: 0.42
+      });
+      const baseRing = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.0045, 10, 28), baseRingMat);
+      baseRing.rotation.x = Math.PI / 2;
+      baseRing.position.y = 0.006;
+      g.add(baseRing);
+
+      const skirtMat = new THREE.MeshPhysicalMaterial({
+        color: spec.color,
+        emissive: spec.color,
+        emissiveIntensity: 0.30,
+        roughness: 0.22,
+        metalness: 0.15,
+        clearcoat: 0.4,
+        transparent: true,
+        opacity: 0.52
+      });
+      const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.048, 0.026, 24), skirtMat);
+      skirt.position.y = 0.017;
+      g.add(skirt);
+
+      const capGroup = new THREE.Group();
+      capGroup.position.y = 0.042;
+      g.add(capGroup);
+
+      const capMat = new THREE.MeshStandardMaterial({
+        color: spec.color,
+        emissive: spec.color,
+        emissiveIntensity: 0.44,
+        roughness: 0.22,
+        metalness: 0.52
+      });
+      const capRim = new THREE.Mesh(new THREE.CylinderGeometry(0.049, 0.042, 0.018, 24), capMat);
+      capGroup.add(capRim);
+
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(0.036, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.5),
+        chromeMat
+      );
+      dome.scale.set(1, 0.48, 1);
+      dome.position.y = 0.008;
+      capGroup.add(dome);
+
+      const emblem = new THREE.Mesh(
+        new THREE.TorusGeometry(0.026, 0.0035, 8, 24),
+        new THREE.MeshBasicMaterial({ color: spec.color })
+      );
+      emblem.rotation.x = Math.PI / 2;
+      emblem.position.y = 0.022;
+      capGroup.add(emblem);
+
+      const light = new THREE.PointLight(spec.color, 0.32, 0.52, 1.8);
+      light.position.y = 0.095;
+      g.add(light);
+
+      bumpers.push({
+        x: spec.x, z: spec.z, radius: 0.048, color: spec.color,
+        group: g, capGroup, capMat, skirtMat, baseRingMat, light, flash: 0
+      });
+    });
+
+    // 3 Center Drop Targets (Clear all 3 -> MULTIBALL! x3 & Re-Arm Kickback)
+    const targetColors = [0xff00cc, 0xffaa00, 0xff00cc];
+    [-0.068, 0, 0.068].forEach((ox, idx) => {
+      const col = targetColors[idx];
+      const mat = new THREE.MeshStandardMaterial({
+        color: col,
+        emissive: col,
+        emissiveIntensity: 0.42,
+        roughness: 0.25,
+        metalness: 0.38
+      });
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.042, 0.018), mat);
+      mesh.position.set(CX + ox, 0.021, -0.075);
+      tableGroup.add(mesh);
+      dropTargets.push({ x: CX + ox, z: -0.075, halfW: 0.025, halfD: 0.011, color: col, mesh, down: false });
+    });
+
+    // Spinning Cyber Spinner (Left Orbit Lane — Trigger-Based, Zero Jamming)
+    const cyberSpinner = (() => {
+      const sx = CX - 0.21;
+      const sz = -0.045;
+      const root = new THREE.Group();
+      root.position.set(sx, 0, sz);
+      tableGroup.add(root);
+
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.004, 8, 20, Math.PI), chromeMat);
+      arch.position.y = 0.028;
+      root.add(arch);
+
+      const hinge = new THREE.Group();
+      hinge.position.y = 0.046;
+      root.add(hinge);
+
+      const bladeMat = new THREE.MeshStandardMaterial({
+        color: 0x00f3ff,
+        emissive: 0x00f3ff,
+        emissiveIntensity: 0.42,
+        roughness: 0.2,
+        metalness: 0.72
+      });
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.034, 0.005), bladeMat);
+      blade.position.y = -0.017;
+      hinge.add(blade);
+
+      const edgeGlow = new THREE.Mesh(
+        new THREE.BoxGeometry(0.056, 0.005, 0.007),
+        new THREE.MeshBasicMaterial({ color: 0x88f8ff })
+      );
+      edgeGlow.position.y = -0.033;
+      hinge.add(edgeGlow);
+
+      return { x: sx, z: sz, hinge, bladeMat, angle: 0, angVel: 0, spinAccum: 0, triggerCooldown: 0 };
+    })();
+
+    // Compact Holographic Cyber Core (Tucked cleanly at top-back arch below LED scoreboard)
+    const holoCore = (() => {
+      const root = new THREE.Group();
+      root.position.set(CX, 0.088, -0.665);
+      root.scale.setScalar(0.55);
+      tableGroup.add(root);
+
+      const prismMat = new THREE.MeshPhysicalMaterial({
+        color: 0x00c8ff,
+        emissive: 0x0088cc,
+        emissiveIntensity: 0.42,
+        roughness: 0.18,
+        metalness: 0.25,
+        transparent: true,
+        opacity: 0.55
+      });
+      const prism = new THREE.Mesh(new THREE.OctahedronGeometry(0.052, 0), prismMat);
+      root.add(prism);
+
+      const prismWire = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.OctahedronGeometry(0.058, 0)),
+        new THREE.LineBasicMaterial({ color: 0x88f8ff, transparent: true, opacity: 0.62 })
+      );
+      root.add(prismWire);
+
+      const ring1 = new THREE.Mesh(
+        new THREE.TorusGeometry(0.088, 0.0035, 10, 32),
+        new THREE.MeshBasicMaterial({ color: 0x00d8ff, transparent: true, opacity: 0.52 })
+      );
+      const ring2 = new THREE.Mesh(
+        new THREE.TorusGeometry(0.110, 0.0035, 10, 32),
+        new THREE.MeshBasicMaterial({ color: 0xff00cc, transparent: true, opacity: 0.48 })
+      );
+      const ring3 = new THREE.Mesh(
+        new THREE.TorusGeometry(0.130, 0.0028, 8, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.38 })
+      );
+      root.add(ring1, ring2, ring3);
+
+      const coreLight = new THREE.PointLight(0x00d8ff, 0.32, 0.55, 1.8);
+      root.add(coreLight);
+
+      return { root, prism, prismWire, prismMat, ring1, ring2, ring3, coreLight, pulseTimer: 0 };
+    })();
+
+    // Sweeping Elevated Dual Wireform + Acrylic Neon Ramps with Subtle Chasing LED Runway Lights
+    const rampLEDs = [];
+    const rampLedGeo = new THREE.SphereGeometry(0.0052, 8, 8);
+
+    function buildElevatedRamp(name, entryX, entryZ, curvePts, colorHex, exitVelX, exitVelZ) {
+      const curve = new THREE.CatmullRomCurve3(curvePts.map(p => new THREE.Vector3(...p)));
+
+      const trackGeo = new THREE.TubeGeometry(curve, 56, 0.026, 8, false);
+      const trackMat = new THREE.MeshPhysicalMaterial({
+        color: colorHex,
+        emissive: colorHex,
+        emissiveIntensity: 0.18,
+        roughness: 0.22,
+        metalness: 0.15,
+        clearcoat: 0.35,
+        transparent: true,
+        opacity: 0.12,
+        depthWrite: false
+      });
+      tableGroup.add(new THREE.Mesh(trackGeo, trackMat));
+
+      [-0.026, 0.026].forEach(offset => {
+        const railPts = [];
+        const upperWirePts = [];
+        for (let i = 0; i <= 48; i++) {
+          const t = i / 48;
+          const pt = curve.getPointAt(t);
+          const tan = curve.getTangentAt(t);
+          const perp = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+          railPts.push(pt.clone().addScaledVector(perp, offset).add(new THREE.Vector3(0, 0.011, 0)));
+          upperWirePts.push(pt.clone().addScaledVector(perp, offset * 1.06).add(new THREE.Vector3(0, 0.026, 0)));
+        }
+        tableGroup.add(new THREE.Mesh(
+          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(railPts), 48, 0.0032, 6, false),
+          new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.62 })
+        ));
+        tableGroup.add(new THREE.Mesh(
+          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(upperWirePts), 48, 0.0028, 8, false),
+          chromeMat
+        ));
+      });
+
+      const leds = [];
+      for (let i = 0; i < 14; i++) {
+        const u = i / 14;
+        const pt = curve.getPointAt(u);
+        const lMat = new THREE.MeshBasicMaterial({
+          color: colorHex,
+          transparent: true,
+          opacity: 0.35
+        });
+        const lMesh = new THREE.Mesh(rampLedGeo, lMat);
+        lMesh.position.copy(pt).add(new THREE.Vector3(0, 0.005, 0));
+        tableGroup.add(lMesh);
+        leds.push({ mesh: lMesh, mat: lMat, u });
+      }
+      rampLEDs.push({ leds, colorHex, streakTimer: 0 });
+
+      const arch = new THREE.Mesh(
+        new THREE.TorusGeometry(0.044, 0.0045, 8, 20, Math.PI),
+        new THREE.MeshBasicMaterial({ color: colorHex })
+      );
+      arch.position.set(entryX, 0.008, entryZ);
+      tableGroup.add(arch);
+
+      ramps.push({ name, entryX, entryZ, entryR: 0.052, curve, colorHex, exitVelX, exitVelZ, ledGroupIdx: rampLEDs.length - 1 });
+    }
+
+    // Left Cyan Elevated Ramp -> loops around back and exits cleanly into left inlane
+    buildElevatedRamp(
+      'CYBER LOOP',
+      CX - 0.19, -0.14,
+      [
+        [CX - 0.19, 0.022, -0.14],
+        [CX - 0.24, 0.085, -0.44],
+        [CX - 0.04, 0.115, -0.62],
+        [CX - 0.25, 0.075, -0.30],
+        [leftInlaneX + 0.036, 0.035, 0.06],
+        [leftInlaneX + 0.036, 0.021, 0.22]
+      ],
+      0x00f3ff,
+      0.0, 0.72
+    );
+
+    // Right Magenta Elevated Ramp -> loops around upper right and exits cleanly into right inlane
+    buildElevatedRamp(
+      'HYPER RAMP',
+      CX + 0.19, -0.14,
+      [
+        [CX + 0.19, 0.022, -0.14],
+        [CX + 0.24, 0.085, -0.44],
+        [CX + 0.04, 0.115, -0.62],
+        [CX + 0.24, 0.075, -0.30],
+        [rightInlaneX - 0.036, 0.035, 0.06],
+        [rightInlaneX - 0.036, 0.021, 0.22]
+      ],
+      0xff00cc,
+      0.0, 0.72
+    );
+
+    /* =========================================================================
+       7. ELECTRIC-CYAN & HOT-MAGENTA FLIPPERS (1:1 VISUAL & PHYSICS CAPSULES)
+       ========================================================================= */
+    function createFlipper(side, colorHex) {
+      const pivotX = CX + side * FLIPPER_PIVOT_OFFSET;
+      const pivotZ = FLIPPER_PIVOT_Z;
+      const group = new THREE.Group();
+      group.position.set(pivotX, 0.021, pivotZ);
+      tableGroup.add(group);
+
+      // Gold/Chrome Pivot Hub Cap
+      const hub = new THREE.Mesh(
+        new THREE.CylinderGeometry(FLIPPER_TIP_RADIUS * 1.18, FLIPPER_TIP_RADIUS * 1.25, 0.036, 20),
+        new THREE.MeshStandardMaterial({ color: 0xffcc55, roughness: 0.2, metalness: 0.85 })
+      );
+      group.add(hub);
+
+      // Capsule Blade matching exact FLIPPER_LENGTH and FLIPPER_TIP_RADIUS
+      const bladeGeo = new THREE.CapsuleGeometry(FLIPPER_TIP_RADIUS, FLIPPER_LENGTH, 10, 18);
+      bladeGeo.rotateZ(Math.PI / 2);
+      const bladeMat = new THREE.MeshStandardMaterial({
+        color: colorHex,
+        emissive: colorHex,
+        emissiveIntensity: 0.45,
+        roughness: 0.24,
+        metalness: 0.28
+      });
+      const blade = new THREE.Mesh(bladeGeo, bladeMat);
+      blade.position.x = -side * (FLIPPER_LENGTH * 0.5);
+      group.add(blade);
+
+      return {
+        side,
+        px: pivotX,
+        pz: pivotZ,
+        length: FLIPPER_LENGTH,
+        radius: FLIPPER_TIP_RADIUS,
+        angle: FLIPPER_REST_ANGLE,
+        prevAngle: FLIPPER_REST_ANGLE,
+        angVel: 0,
+        boostTimer: 0,
+        pressed: false,
+        group
+      };
+    }
+
+    const leftFlipper = createFlipper(-1, 0x00f3ff);
+    const rightFlipper = createFlipper( 1, 0xff00cc);
+    const flippers = [leftFlipper, rightFlipper];
+
+    /* =========================================================================
+       8. POOLED IMPACT VFX (SPARK STREAKS, SHOCKWAVES & 3D SCORE POPUPS)
+       ========================================================================= */
+    const sparkPool = [];
+    const shockPool = [];
+    const popupPool = [];
+    let sparkIdx = 0, shockIdx = 0, popupIdx = 0;
+
+    const sparkGeo = new THREE.CylinderGeometry(0.0022, 0.0055, 0.055, 6);
+    sparkGeo.rotateX(Math.PI / 2);
+    for (let i = 0; i < 180; i++) {
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xffdd55,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const m = new THREE.Mesh(sparkGeo, mat);
+      m.visible = false;
+      tableGroup.add(m);
+      sparkPool.push({ mesh: m, mat, vx: 0, vy: 0, vz: 0, life: 0, maxLife: 0.35 });
+    }
+
+    const shockGeo = new THREE.RingGeometry(0.018, 0.032, 28);
+    shockGeo.rotateX(-Math.PI / 2);
+    for (let i = 0; i < 18; i++) {
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0x00f3ff,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const m = new THREE.Mesh(shockGeo, mat);
+      m.visible = false;
+      tableGroup.add(m);
+      shockPool.push({ mesh: m, mat, life: 0, maxLife: 0.34 });
+    }
+
+    // 14 Pooled 3D Floating Score Popups
+    for (let i = 0; i < 14; i++) {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 96;
+      const ctx = c.getContext('2d');
+      const tex = new THREE.CanvasTexture(c);
+      const mat = new THREE.SpriteMaterial({
+        map: tex,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending,
+        depthTest: false,
+        depthWrite: false
+      });
+      const sp = new THREE.Sprite(mat);
+      sp.visible = false;
+      tableGroup.add(sp);
+      popupPool.push({ sp, mat, ctx, tex, life: 0, maxLife: 0.85, baseScale: 0.16 });
+    }
+
+    function spawnScorePopup(x, z, text, colorStr = '#00f3ff', scale = 0.18) {
+      const p = popupPool[popupIdx];
+      popupIdx = (popupIdx + 1) % popupPool.length;
+      const ctx = p.ctx;
+      ctx.clearRect(0, 0, 256, 96);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '900 38px "Orbitron", system-ui, sans-serif';
+      ctx.shadowColor = colorStr;
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(text, 128, 48);
+      ctx.strokeStyle = colorStr;
+      ctx.lineWidth = 2.5;
+      ctx.strokeText(text, 128, 48);
+      p.tex.needsUpdate = true;
+
+      p.sp.visible = true;
+      p.sp.position.set(x, 0.085, z);
+      p.baseScale = scale;
+      p.sp.scale.set(scale, scale * 0.375, 1);
+      p.mat.opacity = 1.0;
+      p.life = 0.85;
+      p.maxLife = 0.85;
+    }
+
+    function spawnSparks(x, z, colorHex, count = 14) {
+      for (let i = 0; i < count; i++) {
+        const s = sparkPool[sparkIdx];
+        sparkIdx = (sparkIdx + 1) % sparkPool.length;
+        s.mesh.visible = true;
+        s.mesh.position.set(x, 0.026, z);
+        s.mat.color.setHex(i % 3 === 0 ? 0xffffff : colorHex);
+        s.mat.opacity = 1.0;
+        const a = Math.random() * Math.PI * 2;
+        const spd = 0.45 + Math.random() * 1.4;
+        s.vx = Math.cos(a) * spd;
+        s.vy = 0.35 + Math.random() * 0.75;
+        s.vz = Math.sin(a) * spd;
+        s.life = 0.24 + Math.random() * 0.2;
+        s.maxLife = s.life;
+      }
+    }
+
+    function spawnShockwave(x, z, colorHex) {
+      const sw = shockPool[shockIdx];
+      shockIdx = (shockIdx + 1) % shockPool.length;
+      sw.mesh.visible = true;
+      sw.mesh.position.set(x, 0.012, z);
+      sw.mesh.scale.setScalar(0.8);
+      sw.mat.color.setHex(colorHex);
+      sw.mat.opacity = 0.95;
+      sw.life = 0.34;
+      sw.maxLife = 0.34;
+    }
+
+    /* =========================================================================
+       9. BALL SPAWNING, 3-COLOR COMET TRAILS & GAME STATE
+       ========================================================================= */
+    const balls = [];
+
+    function spawnBall(x, z, vx = 0, vz = 0, trailStyle = 'fire') {
+      const mesh = new THREE.Mesh(ballGeo, ballMat);
+      mesh.position.set(x, TABLE.ballR, z);
+      tableGroup.add(mesh);
+
+      const tex = trailStyle === 'fire' ? fireTrailTex : (trailStyle === 'magenta' ? magentaTrailTex : cyanTrailTex);
+      const trailSprites = [];
+      for (let i = 0; i < 16; i++) {
+        const t = i / 16;
+        const col = trailStyle === 'fire'
+          ? new THREE.Color().setHSL(0.085 - t * 0.05, 1.0, 0.62)
+          : (trailStyle === 'magenta'
+            ? new THREE.Color().setHSL(0.86 - t * 0.08, 1.0, 0.62)
+            : new THREE.Color().setHSL(0.52 + t * 0.06, 1.0, 0.64));
+        const sMat = new THREE.SpriteMaterial({
+          map: tex,
+          color: col,
+          transparent: true,
+          opacity: Math.pow(1 - t, 1.35) * 0.88,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const sp = new THREE.Sprite(sMat);
+        const sz = TABLE.ballR * (4.9 * (1 - t * 0.78));
+        sp.scale.set(sz, sz, 1);
+        sp.visible = false;
+        tableGroup.add(sp);
+        trailSprites.push(sp);
+      }
+
+      const b = {
+        x, z, vx, vz,
+        mesh,
+        trailSprites,
+        history: [],
+        onRamp: null,
+        rampT: 0,
+        inShooter: x > TABLE.dividerX,
+        lastCheckX: x,
+        lastCheckZ: z,
+        stuckTimer: 0
+      };
+      balls.push(b);
+      return b;
+    }
+
+    function removeBall(idx) {
+      const b = balls[idx];
+      tableGroup.remove(b.mesh);
+      b.trailSprites.forEach(sp => {
+        tableGroup.remove(sp);
+        sp.material.dispose();
+      });
+      balls.splice(idx, 1);
+    }
+
+    function clearAllBalls() {
+      while (balls.length > 0) removeBall(0);
+    }
+
+    let savedHigh = 0;
+    try { savedHigh = parseInt(localStorage.getItem('neon_vr_pinball_high') || '0', 10) || 0; } catch (_) {}
+
+    const state = {
+      mode: 'MENU', // MENU, PLAYING, GAME_OVER
+      score: 0,
+      highScore: savedHigh,
+      ballNum: 1,
+      maxBalls: 3,
+      multiplier: 1,
+      combo: 0,
+      comboTimer: 0,
+      rampCount: 0,
+      multiballActive: false,
+      ballSaverTimer: 0,
+      plungeSkillTimer: 0,
+      kickbackArmed: true,
+      kickbackAnim: 0,
+      kickbackCooldown: 0,
+      plungerPull: 0,
+      plungerHolding: false,
+      statusTitle: 'NEON OVERDRIVE',
+      statusTimer: 0,
+      tiltStrikes: 0,
+      tiltCooldown: 0,
+      tilted: false,
+      shakeTimer: 0,
+      camMode: 0,
+      bloomEnabled: true,
+      ledFlashTimer: 0,
+      inVR: false
+    };
+
+    const calloutEl = document.getElementById('callout');
+    const calloutTitleEl = document.getElementById('callout-title');
+    const calloutSubEl = document.getElementById('callout-sub');
+    const launchHintEl = document.getElementById('launch-hint');
+    const miniHudEl = document.getElementById('mini-hud');
+    const miniScoreEl = document.getElementById('mini-score');
+    const miniBallEl = document.getElementById('mini-ball');
+    const miniMultEl = document.getElementById('mini-mult');
+
+    let hudDirty = true;
+
+    function addScore(pts) {
+      if (state.tilted) return;
+      state.score += Math.round(pts * state.multiplier);
+      if (state.score > state.highScore) {
+        state.highScore = state.score;
+        try { localStorage.setItem('neon_vr_pinball_high', String(state.highScore)); } catch (_) {}
+      }
+      hudDirty = true;
+    }
+
+    function showCallout(title, sub, duration = 2.0, color = '#ff00cc') {
+      state.statusTitle = title;
+      state.statusTimer = duration;
+      if (!state.inVR) {
+        calloutTitleEl.textContent = title;
+        calloutSubEl.textContent = sub;
+        calloutTitleEl.style.textShadow = `0 0 18px ${color}`;
+        calloutEl.style.borderColor = color;
+        calloutEl.classList.add('show');
+      }
+      hudDirty = true;
+    }
+
+    function refreshBackglassLED() {
+      hudDirty = false;
+      miniScoreEl.textContent = state.score.toLocaleString();
+      miniBallEl.textContent = `${state.ballNum}/${state.maxBalls}`;
+      miniMultEl.textContent = `${state.multiplier}x`;
+
+      const ctx = ledCtx;
+      const w = 1024, h = 288;
+      ctx.fillStyle = '#07061a';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = state.multiballActive ? '#ff00cc' : '#00f3ff';
+      ctx.lineWidth = 10;
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.shadowBlur = 22;
+      ctx.strokeRect(14, 14, w - 28, h - 28);
+      ctx.shadowBlur = 0;
+
+      const header = state.tilted
+        ? 'TILT! FLIPPERS LOCKED'
+        : (state.statusTimer > 0
+          ? state.statusTitle
+          : (state.multiballActive
+            ? `MULTIBALL! x${balls.length}`
+            : (state.ballSaverTimer > 0 ? 'BALL SAVER ACTIVE' : `BALL ${state.ballNum}  •  MULT ${state.multiplier}x`)));
+
+      ctx.textAlign = 'center';
+      ctx.font = '900 58px "Orbitron", system-ui, sans-serif';
+      ctx.fillStyle = state.tilted ? '#ff3355' : (state.multiballActive ? '#ff4be2' : '#ffe066');
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 18;
+      ctx.fillText(header, w / 2, 102);
+
+      ctx.font = '900 108px "Orbitron", system-ui, sans-serif';
+      ctx.fillStyle = '#00f3ff';
+      ctx.shadowColor = '#00f3ff';
+      ctx.shadowBlur = 24;
+      ctx.fillText(state.score.toLocaleString(), w / 2, 224);
+
+      ctx.shadowBlur = 0;
+      ctx.font = '700 24px "Orbitron", system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(180, 232, 255, 0.72)';
+      ctx.textAlign = 'right';
+      ctx.fillText(`HI ${state.highScore.toLocaleString()}`, w - 36, 260);
+      ledTex.needsUpdate = true;
+    }
+
+    function spawnBallInShooter() {
+      const sx = (TABLE.dividerX + TABLE.halfW) * 0.5;
+      spawnBall(sx, TABLE.halfL - 0.08, 0, 0, 'fire');
+      state.kickbackArmed = true;
+      state.tilted = false;
+      state.tiltStrikes = 0;
+      if (!state.inVR) launchHintEl.classList.add('show');
+    }
+
+    function triggerMultiball() {
+      state.multiballActive = true;
+      state.ballSaverTimer = Math.max(state.ballSaverTimer, 10.0);
+      holoCore.pulseTimer = 2.0;
+      audio.playMultiballFanfare();
+      showCallout('MULTIBALL! x3', '3-BALL NEON CHAOS ACTIVE', 3.4, '#ff00cc');
+      spawnScorePopup(CX, -0.15, 'MULTIBALL!', '#ff00cc', 0.25);
+
+      const needed = Math.max(0, 3 - balls.length);
+      const styles = ['fire', 'cyan', 'magenta'];
+      for (let i = 0; i < needed; i++) {
+        const sx = CX + (i === 0 ? -0.14 : 0.14);
+        const sz = -0.10;
+        spawnBall(sx, sz, (Math.random() - 0.5) * 0.9, -0.5 - Math.random() * 0.6, styles[(balls.length) % styles.length]);
+        spawnShockwave(sx, sz, i % 2 === 0 ? 0xff8800 : 0x00f3ff);
+        spawnSparks(sx, sz, 0xff00cc, 18);
+      }
+      hudDirty = true;
+    }
+
+    function launchPlunger(power) {
+      let launched = false;
+      for (const b of balls) {
+        if (b.inShooter && b.z > TABLE.halfL - 0.22) {
+          const p = THREE.MathUtils.clamp(power, 0.22, 1.0);
+          // Slight natural spring variance so plunges hit different rollover lanes
+          const speed = 2.15 + p * 1.45 + (Math.random() - 0.5) * 0.12;
+          b.vz = -speed;
+          b.vx = (Math.random() - 0.5) * 0.05;
+          launched = true;
+        }
+      }
+      if (launched) {
+        audio.playPlungerRelease(power);
+        state.ballSaverTimer = Math.max(state.ballSaverTimer, 8.0);
+        state.plungeSkillTimer = 3.5;
+        launchHintEl.classList.remove('show');
+        triggerHaptic('right', 0.6, 65);
+      }
+    }
+
+    function nudgeTable() {
+      if (state.mode !== 'PLAYING' || state.tilted) return;
+      state.shakeTimer = 0.14;
+      state.tiltStrikes += 1;
+      state.tiltCooldown = 4.2;
+
+      for (const b of balls) {
+        if (!b.inShooter && !b.onRamp) {
+          b.vx += (Math.random() - 0.5) * 0.52;
+          b.vz -= 0.26;
+        }
+      }
+      audio.playFlipper(false);
+
+      if (state.tiltStrikes >= 3) {
+        state.tilted = true;
+        leftFlipper.pressed = false;
+        rightFlipper.pressed = false;
+        audio.playTilt();
+        showCallout('TILT!', 'FLIPPERS LOCKED FOR THIS BALL', 2.8, '#ff3355');
+      } else {
+        showCallout('NUDGE!', state.tiltStrikes === 2 ? 'WARNING: TILT IMMINENT' : 'TABLE BUMPED', 0.9, '#ffaa00');
+      }
+    }
+
+    /* =========================================================================
+       10. SUB-STEPPED PINBALL PHYSICS ENGINE (10 SUB-STEPS / FRAME)
+       ========================================================================= */
+    function resolveSegmentCollision(b, seg) {
+      const dx = seg.x2 - seg.x1;
+      const dz = seg.z2 - seg.z1;
+      const lenSq = dx * dx + dz * dz;
+      if (lenSq < 1e-8) return;
+
+      const t = THREE.MathUtils.clamp(((b.x - seg.x1) * dx + (b.z - seg.z1) * dz) / lenSq, 0, 1);
+      const cx = seg.x1 + t * dx;
+      const cz = seg.z1 + t * dz;
+      const rx = b.x - cx;
+      const rz = b.z - cz;
+      const dSq = rx * rx + rz * rz;
+      const minD = TABLE.ballR;
+
+      if (dSq < minD * minD && dSq > 1e-10) {
+        const d = Math.sqrt(dSq);
+        const nx = rx / d;
+        const nz = rz / d;
+        b.x += nx * (minD - d + 0.0005);
+        b.z += nz * (minD - d + 0.0005);
+
+        const vn = b.vx * nx + b.vz * nz;
+        if (vn < 0) {
+          if (seg.isSlingshot) {
+            const kick = 1.92;
+            b.vx = nx * kick + (Math.random() - 0.5) * 0.14;
+            b.vz = nz * kick - 0.25;
+            if (slingshotMeshes[seg.slingIdx]) slingshotMeshes[seg.slingIdx].flash = 1.0;
+            addScore(350);
+            state.ledFlashTimer = 0.22;
+            audio.playSlingshot();
+            spawnSparks(cx, cz, seg.slingIdx === 0 ? 0x00f3ff : 0xff00cc, 14);
+            spawnScorePopup(cx, cz, '+350', seg.slingIdx === 0 ? '#00f3ff' : '#ff00cc', 0.14);
+            triggerHaptic(seg.slingIdx === 0 ? 'left' : 'right', 0.45, 40);
+          } else {
+            b.vx -= (1 + seg.restitution) * vn * nx;
+            b.vz -= (1 + seg.restitution) * vn * nz;
+            // Gentle top-arch friction so plunged balls drop naturally into rollover lanes
+            if (b.z < -0.56) {
+              b.vx *= 0.975;
+              b.vz *= 0.975;
+            }
+          }
+        }
+      }
+    }
+
+    function resolveFlipperCollision(b, fl) {
+      const cosA = Math.cos(fl.angle);
+      const sinA = Math.sin(fl.angle);
+      const tx = fl.px - fl.side * fl.length * cosA;
+      const tz = fl.pz + fl.length * sinA;
+
+      const dx = tx - fl.px;
+      const dz = tz - fl.pz;
+      const lenSq = dx * dx + dz * dz;
+      const t = THREE.MathUtils.clamp(((b.x - fl.px) * dx + (b.z - fl.pz) * dz) / lenSq, 0, 1);
+
+      const cx = fl.px + t * dx;
+      const cz = fl.pz + t * dz;
+      const rx = b.x - cx;
+      const rz = b.z - cz;
+      const dSq = rx * rx + rz * rz;
+      const minD = TABLE.ballR + fl.radius;
+
+      if (dSq < minD * minD && dSq > 1e-10) {
+        const d = Math.sqrt(dSq);
+        const nx = rx / d;
+        const nz = rz / d;
+        b.x += nx * (minD - d + 0.0008);
+        b.z += nz * (minD - d + 0.0008);
+
+        // Tangential surface velocity from flipper angular rotation
+        const arm = t * fl.length;
+        const surfVx = fl.side * sinA * fl.angVel * arm;
+        const surfVz = cosA * fl.angVel * arm;
+
+        const rvx = b.vx - surfVx;
+        const rvz = b.vz - surfVz;
+        const vn = rvx * nx + rvz * nz;
+
+        if (vn < 0) {
+          const isPowerSwing = fl.angVel < -2.0 || fl.boostTimer > 0;
+          const rest = isPowerSwing ? 0.88 : 0.42;
+          b.vx -= (1 + rest) * vn * nx;
+          b.vz -= (1 + rest) * vn * nz;
+
+          // Strong crisp arcade upward impulse when actively flipping
+          if (isPowerSwing && nz < 0.25) {
+            const shotBoost = 1.62 + t * 1.25;
+            b.vx += nx * shotBoost * 0.55;
+            b.vz = Math.min(b.vz - shotBoost * 0.98, -2.65);
+            spawnSparks(cx, cz, fl.side < 0 ? 0x00f3ff : 0xff00cc, 10);
+            triggerHaptic(fl.side < 0 ? 'left' : 'right', 0.5, 45);
+          }
+        }
+      }
+    }
+
+    function stepPhysics(dt) {
+      const SUB_STEPS = 10;
+      const subDt = dt / SUB_STEPS;
+
+      for (let s = 0; s < SUB_STEPS; s++) {
+        // 1. Update Flippers
+        for (const fl of flippers) {
+          fl.prevAngle = fl.angle;
+          if (fl.boostTimer > 0) fl.boostTimer = Math.max(0, fl.boostTimer - subDt);
+          const target = (fl.pressed && !state.tilted) ? FLIPPER_ACTIVE_ANGLE : FLIPPER_REST_ANGLE;
+          const rate = target < fl.angle ? 24.0 : 14.0;
+          const diff = target - fl.angle;
+          const step = Math.sign(diff) * Math.min(Math.abs(diff), rate * subDt);
+          fl.angle += step;
+          fl.angVel = (fl.angle - fl.prevAngle) / subDt;
+        }
+
+        // 2. Update Balls
+        for (let i = balls.length - 1; i >= 0; i--) {
+          const b = balls[i];
+
+          // Ball riding an elevated ramp spline
+          if (b.onRamp) {
+            b.rampT += subDt * 0.68;
+            if (b.rampT >= 1.0) {
+              const endPt = b.onRamp.curve.getPointAt(1.0);
+              b.x = endPt.x;
+              b.z = endPt.z;
+              b.vx = b.onRamp.exitVelX;
+              b.vz = b.onRamp.exitVelZ;
+              b.onRamp = null;
+            } else {
+              const pt = b.onRamp.curve.getPointAt(b.rampT);
+              b.x = pt.x;
+              b.z = pt.z;
+              b.mesh.position.set(pt.x, pt.y + TABLE.ballR * 0.5, pt.z);
+            }
+            continue;
+          }
+
+          // Gravity & subtle air damping
+          b.vz += TABLE.gravity * subDt;
+          b.vx *= (1 - 0.08 * subDt);
+          b.vz *= (1 - 0.08 * subDt);
+
+          // Speed cap to prevent physics runaway
+          const spdSq = b.vx * b.vx + b.vz * b.vz;
+          if (spdSq > 4.4 * 4.4) {
+            const sc = 4.4 / Math.sqrt(spdSq);
+            b.vx *= sc;
+            b.vz *= sc;
+          }
+
+          b.x += b.vx * subDt;
+          b.z += b.vz * subDt;
+
+          // Shooter lane one-way gate (once ball exits shooter lane into playfield, block re-entry)
+          if (b.inShooter && b.x < TABLE.dividerX - TABLE.ballR) {
+            b.inShooter = false;
+          }
+          if (!b.inShooter && b.x + TABLE.ballR > TABLE.dividerX && b.z > -0.45) {
+            b.x = TABLE.dividerX - TABLE.ballR - 0.001;
+            b.vx = -Math.abs(b.vx) * 0.65;
+          }
+
+          // Wall & Slingshot Collisions
+          for (const seg of wallSegments) {
+            resolveSegmentCollision(b, seg);
+          }
+
+          // Flipper Collisions
+          for (const fl of flippers) {
+            resolveFlipperCollision(b, fl);
+          }
+
+          // Rubber Bumper Posts at Inlane Splits
+          for (const rp of rubberPosts) {
+            const dx = b.x - rp.x, dz = b.z - rp.z;
+            const dSq = dx * dx + dz * dz;
+            const minD = TABLE.ballR + rp.radius;
+            if (dSq < minD * minD && dSq > 1e-10) {
+              const d = Math.sqrt(dSq);
+              const nx = dx / d, nz = dz / d;
+              b.x = rp.x + nx * (minD + 0.001);
+              b.z = rp.z + nz * (minD + 0.001);
+              const vn = b.vx * nx + b.vz * nz;
+              if (vn < 0) {
+                b.vx -= 1.85 * vn * nx;
+                b.vz -= 1.85 * vn * nz;
+                rp.flash = 1.0;
+                addScore(100);
+                spawnSparks(rp.x, rp.z, rp.col, 8);
+              }
+            }
+          }
+
+          // Top 4 Rollover Lanes (Skill Shot + Multiplier)
+          if (b.z > -0.60 && b.z < -0.48) {
+            for (const rl of rolloverLanes) {
+              if (rl.cooldown <= 0 && Math.abs(b.x - rl.x) < 0.042) {
+                rl.cooldown = 0.65;
+                rl.lit = true;
+                audio.playRollover();
+                if (state.plungeSkillTimer > 0) {
+                  state.plungeSkillTimer = 0;
+                  addScore(2000);
+                  showCallout('SKILL SHOT!', '+2,000 TOP LANE BONUS', 1.9, '#ffaa00');
+                  spawnScorePopup(rl.x, rl.z, 'SKILL SHOT!', '#ffaa00', 0.22);
+                } else {
+                  addScore(500);
+                  spawnScorePopup(rl.x, rl.z, '+500', '#00ff88', 0.15);
+                }
+                if (rolloverLanes.every(lane => lane.lit)) {
+                  state.multiplier = Math.min(5, state.multiplier + 1);
+                  addScore(2500);
+                  showCallout('TOP LANES COMPLETE!', `MULTIPLIER ${state.multiplier}x`, 1.8, '#00ff88');
+                  setTimeout(() => rolloverLanes.forEach(lane => { lane.lit = false; }), 900);
+                }
+                hudDirty = true;
+              }
+            }
+          }
+
+          // Cyber Spinner Trigger in Left Orbit Lane
+          if (
+            cyberSpinner.triggerCooldown <= 0 &&
+            Math.abs(b.x - cyberSpinner.x) < 0.042 &&
+            Math.abs(b.z - cyberSpinner.z) < 0.030 &&
+            Math.abs(b.vz) > 0.28
+          ) {
+            cyberSpinner.triggerCooldown = 0.22;
+            const spinBoost = Math.min(34, 14 + Math.abs(b.vz) * 9.5);
+            cyberSpinner.angVel = Math.sign(-b.vz || 1) * Math.max(Math.abs(cyberSpinner.angVel), spinBoost);
+            spawnSparks(cyberSpinner.x, cyberSpinner.z, 0x00f3ff, 12);
+            spawnScorePopup(cyberSpinner.x, cyberSpinner.z, 'SPINNER!', '#00f3ff', 0.19);
+            state.ledFlashTimer = 0.35;
+          }
+
+          // Active Left Outlane Kickback ('LASER KICK')
+          if (
+            state.kickbackArmed &&
+            state.kickbackCooldown <= 0 &&
+            b.x < -TABLE.halfW + 0.072 &&
+            b.z > 0.39 && b.z < 0.50 &&
+            b.vz > 0
+          ) {
+            state.kickbackArmed = false;
+            state.kickbackAnim = 1.0;
+            state.kickbackCooldown = 0.45;
+            b.z = 0.395;
+            b.vz = -2.65;
+            b.vx = 0.32;
+            addScore(1000);
+            audio.playKickback();
+            spawnShockwave(kickback.x, kickback.z - 0.02, 0x00f3ff);
+            spawnSparks(kickback.x, kickback.z - 0.02, 0x00f3ff, 22);
+            spawnScorePopup(kickback.x + 0.04, kickback.z - 0.06, 'KICKBACK!', '#00f3ff', 0.20);
+            triggerHaptic('left', 0.8, 80);
+            showCallout('KICKBACK SAVED!', 'LASER KICK FIRED', 2.0, '#00f3ff');
+            hudDirty = true;
+          }
+
+          // 3 Pop Bumpers
+          for (const bmp of bumpers) {
+            const dx = b.x - bmp.x, dz = b.z - bmp.z;
+            const dSq = dx * dx + dz * dz;
+            const minD = TABLE.ballR + bmp.radius;
+            if (dSq < minD * minD && dSq > 1e-10) {
+              const d = Math.sqrt(dSq);
+              const nx = dx / d, nz = dz / d;
+              b.x = bmp.x + nx * (minD + 0.001);
+              b.z = bmp.z + nz * (minD + 0.001);
+              const kick = 2.05;
+              b.vx = nx * kick + (Math.random() - 0.5) * 0.2;
+              b.vz = nz * kick + (Math.random() - 0.5) * 0.2;
+
+              state.combo += 1;
+              state.comboTimer = 2.6;
+              state.ledFlashTimer = 0.28;
+              const hitPts = 250 + state.combo * 50;
+              addScore(hitPts);
+              bmp.flash = 1.0;
+              audio.playBumper(state.combo);
+              spawnShockwave(bmp.x, bmp.z, bmp.color);
+              spawnSparks(bmp.x + nx * bmp.radius, bmp.z + nz * bmp.radius, bmp.color, 18);
+              spawnScorePopup(bmp.x, bmp.z, `+${Math.round(hitPts * state.multiplier)}`, '#' + bmp.color.toString(16).padStart(6, '0'), 0.16);
+              triggerHaptic('left', 0.35, 35);
+              triggerHaptic('right', 0.35, 35);
+            }
+          }
+
+          // Center 3 Drop Targets
+          for (const dtgt of dropTargets) {
+            if (dtgt.down) continue;
+            const cx = THREE.MathUtils.clamp(b.x, dtgt.x - dtgt.halfW, dtgt.x + dtgt.halfW);
+            const cz = THREE.MathUtils.clamp(b.z, dtgt.z - dtgt.halfD, dtgt.z + dtgt.halfD);
+            const dx = b.x - cx, dz = b.z - cz;
+            const dSq = dx * dx + dz * dz;
+            if (dSq < TABLE.ballR * TABLE.ballR && dSq > 1e-10) {
+              const d = Math.sqrt(dSq);
+              const nx = dx / d, nz = dz / d;
+              b.x += nx * (TABLE.ballR - d);
+              b.z += nz * (TABLE.ballR - d);
+              b.vx -= 1.65 * (b.vx * nx + b.vz * nz) * nx;
+              b.vz -= 1.65 * (b.vx * nx + b.vz * nz) * nz;
+
+              dtgt.down = true;
+              dtgt.mesh.position.y = -0.015;
+              state.ledFlashTimer = 0.35;
+              addScore(1000);
+              audio.playDropTarget();
+              spawnShockwave(dtgt.x, dtgt.z, dtgt.color);
+              spawnSparks(dtgt.x, dtgt.z, dtgt.color, 18);
+              spawnScorePopup(dtgt.x, dtgt.z, '+1000', '#ff00cc', 0.17);
+              if (dropTargets.every(t => t.down)) {
+                addScore(5000);
+                state.kickbackArmed = true;
+                setTimeout(() => {
+                  dropTargets.forEach(t => { t.down = false; t.mesh.position.y = 0.021; });
+                }, 1200);
+                triggerMultiball();
+              }
+            }
+          }
+
+          // Sweeping Elevated Ramp Entrances
+          if (b.vz < -0.58) {
+            for (const rmp of ramps) {
+              const d = Math.hypot(b.x - rmp.entryX, b.z - rmp.entryZ);
+              if (d < rmp.entryR) {
+                b.onRamp = rmp;
+                b.rampT = 0.02;
+                state.rampCount += 1;
+                state.ledFlashTimer = 0.6;
+                if (rampLEDs[rmp.ledGroupIdx]) rampLEDs[rmp.ledGroupIdx].streakTimer = 1.4;
+                const multLevels = [1, 2, 3, 5];
+                state.multiplier = multLevels[Math.min(state.rampCount, multLevels.length - 1)];
+                addScore(2500);
+                audio.playRampWhoosh();
+                spawnShockwave(rmp.entryX, rmp.entryZ, rmp.colorHex);
+                spawnSparks(rmp.entryX, rmp.entryZ, rmp.colorHex, 20);
+                spawnScorePopup(rmp.entryX, rmp.entryZ, 'RAMP SHOT!', rmp.colorHex === 0x00f3ff ? '#00f3ff' : '#ff00cc', 0.21);
+                showCallout(rmp.name + '!', `MULTIPLIER ${state.multiplier}x`, 1.7, rmp.colorHex === 0x00f3ff ? '#00f3ff' : '#ff00cc');
+
+                if (state.rampCount % 2 === 0 && balls.length < 3) {
+                  triggerMultiball();
+                }
+                break;
+              }
+            }
+          }
+
+          // Ball-to-Ball Elastic Collisions (for Multiball Chaos!)
+          for (let j = i - 1; j >= 0; j--) {
+            const b2 = balls[j];
+            if (b2.onRamp) continue;
+            const dx = b.x - b2.x, dz = b.z - b2.z;
+            const dSq = dx * dx + dz * dz;
+            const minD = TABLE.ballR * 2;
+            if (dSq < minD * minD && dSq > 1e-10) {
+              const d = Math.sqrt(dSq);
+              const nx = dx / d, nz = dz / d;
+              const overlap = (minD - d) * 0.5;
+              b.x += nx * overlap; b.z += nz * overlap;
+              b2.x -= nx * overlap; b2.z -= nz * overlap;
+
+              const rvx = b.vx - b2.vx, rvz = b.vz - b2.vz;
+              const vn = rvx * nx + rvz * nz;
+              if (vn < 0) {
+                const imp = -0.92 * vn;
+                b.vx += imp * nx; b.vz += imp * nz;
+                b2.vx -= imp * nx; b2.vz -= imp * nz;
+              }
+            }
+          }
+
+          // Drain Detection
+          if (b.z > TABLE.halfL + 0.02 && !b.inShooter) {
+            removeBall(i);
+            if (balls.length <= 1) state.multiballActive = false;
+
+            if (balls.length === 0) {
+              if (state.ballSaverTimer > 0 && !state.tilted) {
+                showCallout('BALL SAVED!', 'AUTO-LAUNCHED BACK IN PLAY', 1.8, '#00ff88');
+                spawnBall(CX, -0.05, (Math.random() - 0.5) * 0.6, -1.6, 'cyan');
+                spawnShockwave(CX, -0.05, 0x00ff88);
+                audio.playKickback();
+              } else {
+                audio.playDrain();
+                state.ballNum += 1;
+                state.multiplier = 1;
+                state.combo = 0;
+                state.rampCount = 0;
+                hudDirty = true;
+
+                if (state.ballNum > state.maxBalls) {
+                  triggerGameOver();
+                } else {
+                  showCallout(`BALL ${state.ballNum}`, 'PULL PLUNGER TO LAUNCH', 2.0, '#00f3ff');
+                  spawnBallInShooter();
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Sync visual ball meshes, trails & Automatic Stuck-Ball Watchdog ('Ball Search')
+      for (const b of balls) {
+        if (!b.onRamp) {
+          b.mesh.position.set(b.x, TABLE.ballR, b.z);
+        }
+
+        if (!b.inShooter && !b.onRamp) {
+          const moved = Math.hypot(b.x - b.lastCheckX, b.z - b.lastCheckZ);
+          if (moved < 0.015) {
+            b.stuckTimer += dt;
+            if (b.stuckTimer >= 1.8) {
+              b.stuckTimer = 0;
+              const toCx = CX - b.x;
+              const toCz = -0.15 - b.z;
+              const len = Math.hypot(toCx, toCz) || 1;
+              b.vx = (toCx / len) * 1.45;
+              b.vz = (toCz / len) * 1.45 - 0.6;
+              audio.playKickback();
+              spawnShockwave(b.x, b.z, 0x00f3ff);
+              spawnSparks(b.x, b.z, 0x00f3ff, 16);
+              showCallout('BALL SEARCH!', 'AUTO-KICK RELEASED', 1.4, '#00f3ff');
+            }
+          } else {
+            b.stuckTimer = 0;
+            b.lastCheckX = b.x;
+            b.lastCheckZ = b.z;
+          }
+        } else {
+          b.stuckTimer = 0;
+        }
+
+        b.history.unshift(b.mesh.position.clone());
+        if (b.history.length > b.trailSprites.length) b.history.pop();
+        const movingFast = b.onRamp || Math.hypot(b.vx, b.vz) > 0.32;
+        for (let k = 0; k < b.trailSprites.length; k++) {
+          if (movingFast && b.history[k]) {
+            b.trailSprites[k].visible = true;
+            b.trailSprites[k].position.copy(b.history[k]);
+          } else {
+            b.trailSprites[k].visible = false;
+          }
+        }
+      }
+    }
+
+    /* =========================================================================
+       11. INPUTS (DESKTOP KEYBOARD, MOUSE, TOUCH & WEBXR 6DOF CONTROLLERS)
+       ========================================================================= */
+    const touchLeftEl = document.getElementById('touch-left');
+    const touchRightEl = document.getElementById('touch-right');
+
+    function setLeftFlipper(down) {
+      if (state.mode !== 'PLAYING' || state.tilted) {
+        leftFlipper.pressed = false;
+        touchLeftEl.classList.remove('active');
+        return;
+      }
+      if (down && !leftFlipper.pressed) {
+        audio.playFlipper(true);
+        leftFlipper.boostTimer = 0.065;
+      } else if (!down && leftFlipper.pressed) {
+        audio.playFlipper(false);
+      }
+      leftFlipper.pressed = down;
+      touchLeftEl.classList.toggle('active', down);
+    }
+
+    function setRightFlipper(down) {
+      if (state.mode !== 'PLAYING' || state.tilted) {
+        rightFlipper.pressed = false;
+        touchRightEl.classList.remove('active');
+        return;
+      }
+      if (down && !rightFlipper.pressed) {
+        audio.playFlipper(true);
+        rightFlipper.boostTimer = 0.065;
+      } else if (!down && rightFlipper.pressed) {
+        audio.playFlipper(false);
+      }
+      rightFlipper.pressed = down;
+      touchRightEl.classList.toggle('active', down);
+    }
+
+    const LEFT_KEYS = new Set(['ShiftLeft', 'ControlLeft', 'KeyZ', 'KeyA', 'ArrowLeft']);
+    const RIGHT_KEYS = new Set(['ShiftRight', 'ControlRight', 'Slash', 'KeyD', 'ArrowRight']);
+    const PLUNGER_KEYS = new Set(['Space', 'ArrowDown', 'Enter']);
+
+    window.addEventListener('keydown', (e) => {
+      if (LEFT_KEYS.has(e.code) || RIGHT_KEYS.has(e.code) || PLUNGER_KEYS.has(e.code) || e.code === 'ArrowUp') {
+        e.preventDefault();
+      }
+      if (e.repeat && PLUNGER_KEYS.has(e.code)) return;
+
+      if (LEFT_KEYS.has(e.code)) {
+        audio.unlock();
+        setLeftFlipper(true);
+      }
+      if (RIGHT_KEYS.has(e.code)) {
+        audio.unlock();
+        setRightFlipper(true);
+      }
+      if (PLUNGER_KEYS.has(e.code)) {
+        audio.unlock();
+        if (state.mode === 'PLAYING') state.plungerHolding = true;
+      }
+      if (e.code === 'KeyX' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+        nudgeTable();
+      }
+      if (e.code === 'KeyC' && !state.inVR) {
+        cycleCameraMode();
+      }
+    }, { passive: false });
+
+    window.addEventListener('keyup', (e) => {
+      if (LEFT_KEYS.has(e.code)) setLeftFlipper(false);
+      if (RIGHT_KEYS.has(e.code)) setRightFlipper(false);
+      if (PLUNGER_KEYS.has(e.code)) {
+        if (state.plungerHolding) {
+          state.plungerHolding = false;
+          launchPlunger(state.plungerPull);
+          state.plungerPull = 0;
+        }
+      }
+    });
+
+    // Desktop Mouse Clicks on Playfield Canvas (Left Click = Left Flipper, Right Click = Right Flipper)
+    container.addEventListener('contextmenu', (e) => e.preventDefault());
+    container.addEventListener('mousedown', (e) => {
+      if (state.inVR || state.mode !== 'PLAYING') return;
+      window.focus();
+      audio.unlock();
+      if (e.button === 0) setLeftFlipper(true);
+      else if (e.button === 2) setRightFlipper(true);
+      else if (e.button === 1) { e.preventDefault(); nudgeTable(); }
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (e.button === 0) setLeftFlipper(false);
+      else if (e.button === 2) setRightFlipper(false);
+    });
+
+    window.addEventListener('blur', () => {
+      setLeftFlipper(false);
+      setRightFlipper(false);
+      state.plungerHolding = false;
+    });
+
+    // Pointer / Touch Controls Bar (Works for both Mouse Click & Touch Tap)
+    const touchBarEl = document.getElementById('touch-bar');
+
+    function bindHold(id, onDown, onUp) {
+      const el = document.getElementById(id);
+      el.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.focus();
+        audio.unlock();
+        onDown();
+      });
+      const release = (e) => {
+        if (e) e.stopPropagation();
+        onUp();
+      };
+      el.addEventListener('pointerup', release);
+      el.addEventListener('pointerleave', release);
+      el.addEventListener('pointercancel', release);
+    }
+    bindHold('touch-left', () => setLeftFlipper(true), () => setLeftFlipper(false));
+    bindHold('touch-right', () => setRightFlipper(true), () => setRightFlipper(false));
+    bindHold('touch-plunger', () => { state.plungerHolding = true; }, () => {
+      if (state.plungerHolding) {
+        state.plungerHolding = false;
+        launchPlunger(state.plungerPull);
+        state.plungerPull = 0;
+      }
+    });
+    document.getElementById('touch-nudge').addEventListener('click', (e) => {
+      e.stopPropagation();
+      audio.unlock();
+      nudgeTable();
+    });
+
+    // WebXR Controllers (Triggers -> Flippers, Right Squeeze -> Plunger)
+    const xrControllers = { left: null, right: null };
+
+    for (let i = 0; i < 2; i++) {
+      const ctrl = renderer.xr.getController(i);
+      ctrl.addEventListener('connected', (ev) => {
+        const hand = ev.data.handedness === 'left' ? 'left' : 'right';
+        ctrl.userData.hand = hand;
+        ctrl.userData.inputSource = ev.data;
+        xrControllers[hand] = ctrl;
+      });
+      ctrl.addEventListener('disconnected', () => {
+        const hand = ctrl.userData.hand;
+        if (hand && xrControllers[hand] === ctrl) xrControllers[hand] = null;
+        ctrl.userData.inputSource = null;
+      });
+      ctrl.addEventListener('selectstart', () => {
+        const hand = ctrl.userData.hand || (i === 0 ? 'left' : 'right');
+        if (state.mode === 'GAME_OVER') { startGame(false); return; }
+        if (hand === 'left') setLeftFlipper(true);
+        else setRightFlipper(true);
+      });
+      ctrl.addEventListener('selectend', () => {
+        const hand = ctrl.userData.hand || (i === 0 ? 'left' : 'right');
+        if (hand === 'left') setLeftFlipper(false);
+        else setRightFlipper(false);
+      });
+      ctrl.addEventListener('squeezestart', () => {
+        if (state.mode === 'PLAYING') state.plungerHolding = true;
+      });
+      ctrl.addEventListener('squeezeend', () => {
+        if (state.plungerHolding) {
+          state.plungerHolding = false;
+          launchPlunger(state.plungerPull);
+          state.plungerPull = 0;
+        }
+      });
+      cameraRig.add(ctrl);
+    }
+
+    function triggerHaptic(hand, intensity = 0.45, ms = 40) {
+      if (!state.inVR) return;
+      const ctrl = xrControllers[hand];
+      const src = ctrl && ctrl.userData.inputSource;
+      if (src && src.gamepad && src.gamepad.hapticActuators && src.gamepad.hapticActuators.length > 0) {
+        try { src.gamepad.hapticActuators[0].pulse(intensity, ms); } catch (_) {}
+      }
+    }
+
+    /* =========================================================================
+       12. GAME FLOW, UI BUTTONS & WEBXR ENTRY
+       ========================================================================= */
+    const startOverlay = document.getElementById('start-overlay');
+    const endOverlay = document.getElementById('end-overlay');
+    const btnCam = document.getElementById('btn-cam');
+    const btnDemoTop = document.getElementById('btn-multiball-demo');
+    const btnMenu = document.getElementById('btn-menu');
+    const btnEnterVR = document.getElementById('btn-enter-vr');
+    const btnVRTop = document.getElementById('btn-vr-top');
+    const btnEndVR = document.getElementById('btn-end-vr');
+    const vrStatusEl = document.getElementById('vr-status');
+
+    let xrSupported = false;
+    async function checkVRSupport() {
+      if (!navigator.xr) {
+        vrStatusEl.textContent = 'WebXR not detected — Play immediately on Desktop & Mobile!';
+        return;
+      }
+      try {
+        xrSupported = await navigator.xr.isSessionSupported('immersive-vr');
+        if (xrSupported) {
+          btnEnterVR.disabled = false;
+          btnVRTop.style.display = 'inline-block';
+          btnEndVR.style.display = 'inline-block';
+          vrStatusEl.textContent = 'WebXR VR Ready (Meta Quest / PCVR supported)';
+          vrStatusEl.style.color = '#6dffb0';
+        } else {
+          vrStatusEl.textContent = 'No VR headset detected — Desktop & Touch mode ready!';
+        }
+      } catch (_) {
+        vrStatusEl.textContent = 'Desktop & Touch mode ready!';
+      }
+    }
+    checkVRSupport();
+
+    function startGame(instantMultiball = false) {
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+      window.focus();
+      audio.unlock();
+      clearAllBalls();
+      state.mode = 'PLAYING';
+      state.score = 0;
+      state.ballNum = 1;
+      state.multiplier = 1;
+      state.combo = 0;
+      state.rampCount = 0;
+      state.multiballActive = false;
+      state.ballSaverTimer = 8.0;
+      state.kickbackArmed = true;
+      state.tilted = false;
+      state.tiltStrikes = 0;
+      leftFlipper.pressed = false;
+      rightFlipper.pressed = false;
+      dropTargets.forEach(t => { t.down = false; t.mesh.position.y = 0.021; });
+      rolloverLanes.forEach(l => { l.lit = false; });
+
+      startOverlay.classList.add('hidden');
+      endOverlay.classList.add('hidden');
+
+      if (!state.inVR) {
+        miniHudEl.style.display = 'flex';
+        btnCam.style.display = 'inline-block';
+        btnDemoTop.style.display = 'inline-block';
+        btnMenu.style.display = 'inline-block';
+        touchBarEl.style.display = 'flex';
+      }
+
+      if (instantMultiball) {
+        launchHintEl.classList.remove('show');
+        triggerMultiball();
+      } else {
+        spawnBallInShooter();
+        showCallout('BALL 1', 'PULL PLUNGER FOR SKILL SHOT', 2.0, '#00f3ff');
+      }
+      hudDirty = true;
+    }
+
+    function triggerGameOver() {
+      state.mode = 'GAME_OVER';
+      launchHintEl.classList.remove('show');
+      touchBarEl.style.display = 'none';
+      showCallout('GAME OVER', `FINAL SCORE: ${state.score.toLocaleString()}`, 6.0, '#ff00cc');
+
+      if (!state.inVR) {
+        document.getElementById('final-score').textContent = state.score.toLocaleString();
+        document.getElementById('final-high').textContent = state.highScore.toLocaleString();
+        endOverlay.classList.remove('hidden');
+      }
+    }
+
+    function cycleCameraMode() {
+      state.camMode = (state.camMode + 1) % CAM_MODES.length;
+      const cm = CAM_MODES[state.camMode];
+      camera.position.copy(cm.pos);
+      camera.lookAt(cm.look);
+      btnCam.textContent = `CAM: ${cm.name}`;
+    }
+
+    async function enterVRSession() {
+      if (!xrSupported) return;
+      audio.unlock();
+      try {
+        const session = await navigator.xr.requestSession('immersive-vr', {
+          optionalFeatures: ['local-floor', 'bounded-floor']
+        });
+        await renderer.xr.setSession(session);
+        state.inVR = true;
+        cameraRig.position.set(0, 0, 0.85);
+        startOverlay.classList.add('hidden');
+        endOverlay.classList.add('hidden');
+        document.getElementById('top-bar').style.display = 'none';
+        miniHudEl.style.display = 'none';
+        touchBarEl.style.display = 'none';
+        launchHintEl.classList.remove('show');
+        calloutEl.classList.remove('show');
+        if (state.mode === 'MENU') startGame(false);
+
+        session.addEventListener('end', () => {
+          state.inVR = false;
+          cameraRig.position.set(0, 0, 0);
+          const cm = CAM_MODES[state.camMode];
+          camera.position.copy(cm.pos);
+          camera.lookAt(cm.look);
+          document.getElementById('top-bar').style.display = 'flex';
+          if (state.mode === 'PLAYING') miniHudEl.style.display = 'flex';
+          if (state.mode === 'GAME_OVER') endOverlay.classList.remove('hidden');
+        });
+      } catch (_) {
+        vrStatusEl.textContent = 'Could not start VR session.';
+      }
+    }
+
+    document.getElementById('btn-play').addEventListener('click', () => startGame(false));
+    document.getElementById('btn-demo-start').addEventListener('click', () => startGame(true));
+    document.getElementById('btn-restart').addEventListener('click', () => startGame(false));
+    btnDemoTop.addEventListener('click', () => { if (state.mode === 'PLAYING') triggerMultiball(); });
+    btnCam.addEventListener('click', cycleCameraMode);
+    btnEnterVR.addEventListener('click', enterVRSession);
+    btnVRTop.addEventListener('click', enterVRSession);
+    btnEndVR.addEventListener('click', enterVRSession);
+
+    btnMenu.addEventListener('click', () => {
+      state.mode = 'MENU';
+      startOverlay.classList.remove('hidden');
+      endOverlay.classList.add('hidden');
+      launchHintEl.classList.remove('show');
+      touchBarEl.style.display = 'none';
+    });
+
+    const btnMute = document.getElementById('btn-mute');
+    btnMute.addEventListener('click', () => {
+      audio.unlock();
+      audio.setMuted(!audio.muted);
+      btnMute.textContent = audio.muted ? 'MUTED' : 'SOUND ON';
+    });
+
+    const btnBloom = document.getElementById('btn-bloom');
+    btnBloom.addEventListener('click', () => {
+      state.bloomEnabled = !state.bloomEnabled;
+      btnBloom.textContent = state.bloomEnabled ? 'BLOOM ON' : 'BLOOM OFF';
+    });
+
+    /* =========================================================================
+       13. MAIN ANIMATION & RENDER LOOP
+       ========================================================================= */
+    let lastTime = performance.now();
+    let ledRefreshAccum = 0;
+    let envAnimAccum = 0;
+
+    function animate(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.033);
+      lastTime = now;
+      const elapsed = now * 0.001;
+      ledRefreshAccum += dt;
+
+      if (state.mode === 'PLAYING') {
+        if (state.plungerHolding) {
+          state.plungerPull = Math.min(1.0, state.plungerPull + dt * 1.15);
+        }
+        if (state.ballSaverTimer > 0) state.ballSaverTimer = Math.max(0, state.ballSaverTimer - dt);
+        if (state.plungeSkillTimer > 0) state.plungeSkillTimer = Math.max(0, state.plungeSkillTimer - dt);
+        if (state.kickbackCooldown > 0) state.kickbackCooldown = Math.max(0, state.kickbackCooldown - dt);
+        if (state.comboTimer > 0) {
+          state.comboTimer -= dt;
+          if (state.comboTimer <= 0) state.combo = 0;
+        }
+        if (state.tiltCooldown > 0) {
+          state.tiltCooldown -= dt;
+          if (state.tiltCooldown <= 0) state.tiltStrikes = 0;
+        }
+
+        stepPhysics(dt);
+      }
+
+      // Sync Flipper Meshes, Holographic Hands, Plunger Spring & Table Nudge Shake
+      leftFlipper.group.rotation.y = -leftFlipper.angle;
+      rightFlipper.group.rotation.y = rightFlipper.angle;
+
+      if (leftFlipBtnMesh) {
+        leftFlipBtnMesh.position.y = leftFlipper.pressed ? 0.151 : 0.158;
+      }
+      if (leftHoloHand) {
+        leftHoloHand.position.y = leftFlipper.pressed ? 0.168 : 0.175;
+      }
+      if (plungerRodGroup && plungerSpringMesh) {
+        const pullOffset = state.plungerPull * 0.11;
+        plungerRodGroup.position.z = TABLE.halfL + 0.03 + pullOffset;
+        plungerSpringMesh.scale.z = Math.max(0.35, 1.0 - state.plungerPull * 0.55);
+        if (rightHoloHand) {
+          rightHoloHand.position.z = TABLE.halfL + 0.22 + pullOffset;
+        }
+      }
+
+      if (state.shakeTimer > 0) {
+        state.shakeTimer = Math.max(0, state.shakeTimer - dt);
+        cabinetRoot.position.x = (Math.random() - 0.5) * 0.018;
+      } else {
+        cabinetRoot.position.x = 0;
+      }
+
+      // Bumper & Slingshot Flash Decay + Vertical Cap-Pop + Rubber Band Glow
+      for (const bmp of bumpers) {
+        if (bmp.flash > 0) {
+          bmp.flash = Math.max(0, bmp.flash - dt * 5.2);
+          bmp.capMat.emissiveIntensity = 0.44 + bmp.flash * 0.95;
+          bmp.skirtMat.emissiveIntensity = 0.30 + bmp.flash * 0.75;
+          bmp.light.intensity = 0.32 + bmp.flash * 1.15;
+          bmp.capGroup.position.y = 0.042 + Math.sin(bmp.flash * Math.PI) * 0.014;
+          bmp.group.scale.setScalar(1 + bmp.flash * 0.10);
+        } else {
+          bmp.capMat.emissiveIntensity = 0.44;
+          bmp.skirtMat.emissiveIntensity = 0.30;
+          bmp.light.intensity = 0.32;
+          bmp.capGroup.position.y = 0.042;
+          bmp.group.scale.setScalar(1);
+        }
+        bmp.baseRingMat.opacity = 0.32 + 0.16 * Math.sin(elapsed * 5.0 + bmp.x * 12) + bmp.flash * 0.35;
+      }
+
+      for (const sl of slingshotMeshes) {
+        if (sl.flash > 0) {
+          sl.flash = Math.max(0, sl.flash - dt * 5.2);
+          sl.mat.emissiveIntensity = 0.34 + sl.flash * 0.85;
+          sl.bandMat.color.setHex(sl.flash > 0.35 ? 0xffffff : sl.slingCol);
+          sl.underLight.intensity = 0.24 + sl.flash * 0.95;
+        } else {
+          sl.mat.emissiveIntensity = 0.34;
+          sl.bandMat.color.setHex(sl.slingCol);
+          sl.underLight.intensity = 0.24;
+        }
+      }
+
+      // Cyber Spinner Rotation & Rapid-Fire Tick Scoring
+      if (cyberSpinner.triggerCooldown > 0) cyberSpinner.triggerCooldown = Math.max(0, cyberSpinner.triggerCooldown - dt);
+      if (Math.abs(cyberSpinner.angVel) > 0.15) {
+        const dAng = cyberSpinner.angVel * dt;
+        cyberSpinner.angle += dAng;
+        cyberSpinner.spinAccum += Math.abs(dAng);
+        cyberSpinner.angVel *= Math.pow(0.28, dt);
+        cyberSpinner.hinge.rotation.x = cyberSpinner.angle;
+        cyberSpinner.bladeMat.emissiveIntensity = 0.42 + Math.min(0.85, Math.abs(cyberSpinner.angVel) * 0.06);
+
+        if (cyberSpinner.spinAccum >= Math.PI) {
+          cyberSpinner.spinAccum -= Math.PI;
+          addScore(150);
+          audio.playSpinnerTick(Math.abs(cyberSpinner.angVel) * 0.4);
+          spawnSparks(cyberSpinner.x, cyberSpinner.z, 0x00f3ff, 4);
+        }
+      } else {
+        cyberSpinner.angVel = 0;
+        cyberSpinner.angle = THREE.MathUtils.lerp(cyberSpinner.angle, 0, Math.min(1, dt * 8));
+        cyberSpinner.hinge.rotation.x = cyberSpinner.angle;
+        cyberSpinner.bladeMat.emissiveIntensity = 0.42;
+      }
+
+      // Compact Holographic Cyber Core Animation (stays tucked below scoreboard)
+      const coreBoost = state.multiballActive ? 2.4 : (1.0 + Math.min(state.combo * 0.15, 1.2));
+      holoCore.prism.rotation.y += dt * 1.4 * coreBoost;
+      holoCore.prism.rotation.x += dt * 0.9 * coreBoost;
+      holoCore.prismWire.rotation.copy(holoCore.prism.rotation);
+      holoCore.ring1.rotation.x += dt * 1.8 * coreBoost;
+      holoCore.ring1.rotation.y += dt * 0.7 * coreBoost;
+      holoCore.ring2.rotation.y -= dt * 2.1 * coreBoost;
+      holoCore.ring2.rotation.z += dt * 1.1 * coreBoost;
+      holoCore.ring3.rotation.x -= dt * 1.2 * coreBoost;
+      holoCore.ring3.rotation.z -= dt * 1.5 * coreBoost;
+      holoCore.root.position.y = 0.088 + Math.sin(elapsed * 2.6) * 0.008;
+      if (holoCore.pulseTimer > 0) {
+        holoCore.pulseTimer = Math.max(0, holoCore.pulseTimer - dt);
+        holoCore.root.scale.setScalar(0.55 * (1 + Math.sin(holoCore.pulseTimer * 14) * 0.12));
+        holoCore.coreLight.intensity = 0.65;
+      } else {
+        holoCore.root.scale.setScalar(state.multiballActive ? 0.62 : 0.55);
+        holoCore.coreLight.intensity = state.multiballActive ? 0.52 : 0.30;
+      }
+
+      // Dynamic Illuminated Playfield Inserts
+      for (const ins of playfieldInserts) {
+        let active = false;
+        if (ins.id === '2X') active = state.multiplier >= 2;
+        else if (ins.id === '3X') active = state.multiplier >= 3;
+        else if (ins.id === '4X') active = state.multiplier >= 4;
+        else if (ins.id === '5X') active = state.multiplier >= 5;
+        else if (ins.id === 'LOCK') active = dropTargets.some(t => t.down) || state.multiballActive;
+        else if (ins.id === 'JACKPOT') active = state.multiballActive;
+        else if (ins.id === 'KICKBACK') active = state.kickbackArmed;
+        else if (ins.id === 'SAVER') active = state.ballSaverTimer > 0;
+        ins.mat.opacity = active ? (0.62 + 0.35 * Math.sin(elapsed * 7.5)) : 0.16;
+      }
+
+      // Chasing LED Runway Lights on Elevated Ramps
+      for (const rg of rampLEDs) {
+        if (rg.streakTimer > 0) rg.streakTimer = Math.max(0, rg.streakTimer - dt);
+        const speed = rg.streakTimer > 0 ? 4.2 : 0.85;
+        const head = (elapsed * speed) % 1.0;
+        for (const led of rg.leds) {
+          let dist = Math.abs(led.u - head);
+          if (dist > 0.5) dist = 1.0 - dist;
+          const glow = Math.max(0, 1.0 - dist * 5.0);
+          led.mat.opacity = 0.16 + glow * 0.58;
+          led.mesh.scale.setScalar(0.8 + glow * 0.45);
+        }
+      }
+
+      // Animated Cabinet Interior Chasing LED Strips
+      if (state.ledFlashTimer > 0) state.ledFlashTimer = Math.max(0, state.ledFlashTimer - dt);
+      for (const led of cabinetLEDs) {
+        if (state.multiballActive) {
+          const hue = (elapsed * 0.55 + led.idx * 0.06 + (led.side > 0 ? 0.35 : 0)) % 1.0;
+          led.mat.color.setHSL(hue, 1.0, 0.56);
+        } else if (state.ledFlashTimer > 0) {
+          led.mat.color.setHex(0xffffff);
+        } else {
+          const wave = 0.45 + 0.55 * Math.sin(elapsed * 5.0 - led.idx * 0.45);
+          const col = new THREE.Color(led.baseHex);
+          col.multiplyScalar(0.55 + wave * 0.65);
+          led.mat.color.copy(col);
+        }
+      }
+
+      // Rubber Post, Rollover Lane & LASER KICK Piston Visuals
+      for (const rp of rubberPosts) {
+        if (rp.flash > 0) {
+          rp.flash = Math.max(0, rp.flash - dt * 5.5);
+          rp.mat.emissiveIntensity = 0.9 + rp.flash * 2.5;
+        }
+      }
+      for (const rl of rolloverLanes) {
+        if (rl.cooldown > 0) rl.cooldown = Math.max(0, rl.cooldown - dt);
+        rl.mat.opacity = rl.lit ? 0.95 : 0.24;
+        rl.mat.color.setHex(rl.lit ? 0x00ff88 : 0x00f3ff);
+      }
+      if (state.kickbackAnim > 0) {
+        state.kickbackAnim = Math.max(0, state.kickbackAnim - dt * 4.5);
+        kickback.mesh.position.z = kickback.z - Math.sin(state.kickbackAnim * Math.PI) * 0.065;
+      } else {
+        kickback.mesh.position.z = kickback.z;
+      }
+      kickback.mat.emissiveIntensity = state.kickbackArmed ? (0.85 + Math.sin(elapsed * 7) * 0.35) : 0.12;
+
+      // Update Pooled Sparks, Shockwaves & 3D Score Popups
+      for (const s of sparkPool) {
+        if (s.life <= 0) continue;
+        s.life -= dt;
+        if (s.life <= 0) { s.mesh.visible = false; continue; }
+        s.vy -= 2.8 * dt;
+        s.mesh.position.x += s.vx * dt;
+        s.mesh.position.y = Math.max(0.008, s.mesh.position.y + s.vy * dt);
+        s.mesh.position.z += s.vz * dt;
+        s.mesh.lookAt(s.mesh.position.x + s.vx, s.mesh.position.y + s.vy, s.mesh.position.z + s.vz);
+        s.mat.opacity = s.life / s.maxLife;
+      }
+
+      for (const sw of shockPool) {
+        if (sw.life <= 0) continue;
+        sw.life -= dt;
+        if (sw.life <= 0) { sw.mesh.visible = false; continue; }
+        const t = 1 - sw.life / sw.maxLife;
+        sw.mesh.scale.setScalar(0.8 + t * 3.4);
+        sw.mat.opacity = (1 - t) * 0.95;
+      }
+
+      for (const p of popupPool) {
+        if (p.life <= 0) continue;
+        p.life -= dt;
+        if (p.life <= 0) { p.sp.visible = false; continue; }
+        const t = 1 - p.life / p.maxLife;
+        p.sp.position.y += dt * 0.16;
+        const sc = p.baseScale * (0.9 + t * 0.35);
+        p.sp.scale.set(sc, sc * 0.375, 1);
+        p.mat.opacity = Math.pow(1 - t, 1.3);
+      }
+
+      // Drifting Ambient Room Motes & 20fps Animated Backglass / Arcade Screens
+      for (const m of ambientMotes) {
+        m.sp.position.y = m.baseY + Math.sin(elapsed * m.speed + m.phase) * 0.18;
+        m.sp.position.x = m.baseX + Math.cos(elapsed * m.speed * 0.7 + m.phase) * 0.12;
+      }
+      envAnimAccum += dt;
+      if (envAnimAccum >= 0.05) {
+        envAnimAccum = 0;
+        updateBackglassTranslite(elapsed);
+        updateAnimatedCabScreens(elapsed);
+      }
+
+      // Callout Banner Timer & Backglass LED Scoreboard Refresh
+      if (state.statusTimer > 0) {
+        state.statusTimer -= dt;
+        if (state.statusTimer <= 0) {
+          calloutEl.classList.remove('show');
+          hudDirty = true;
+        }
+      }
+
+      if (hudDirty || ledRefreshAccum >= 0.4) {
+        ledRefreshAccum = 0;
+        refreshBackglassLED();
+      }
+
+      if (state.inVR || !state.bloomEnabled) {
+        renderer.render(scene, camera);
+      } else {
+        composer.render();
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    updateBackglassTranslite(0);
+    refreshBackglassLED();
+
+    window.onload = () => {
+      renderer.setAnimationLoop(animate);
+    };
+  </script>
+</body>
+</html>
